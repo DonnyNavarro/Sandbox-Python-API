@@ -4,7 +4,7 @@ from datetime import datetime
 import reverse_geocode
 
 # VISUAL DISPLAY PARAMETERS
-column_width = 18
+column_width = 20
 pagebreak = 65
 
 # GET ISS INTERNATIONAL SPACE STATION LOCATION
@@ -22,7 +22,7 @@ iss["nearestLocation"] = reverse_geocode.get(iss["coordinates"])
 # DISPLAY ISS
 print(" "+"-"*pagebreak)
 print("| International Space Station")
-print()
+print(" -"*int(pagebreak/2))
 print("|"+" "*(column_width-5),"Time:", iss["time"])
 print("|"+" "*(column_width-12),"Coordinates:",iss["coordinates"])
 
@@ -41,7 +41,7 @@ iss["nearestLocation"]["coordinates"] = (lat, lon)
 # DISPLAY NEAREST EARTH CITY
 print(" "+"-"*pagebreak)
 print("| Nearest Earth City")
-print()
+print(" -"*int(pagebreak/2))
 print("|"+" "*(column_width-5),"City:", iss["nearestLocation"]["city"])
 print("|"+" "*(column_width-8),"Country:", iss["nearestLocation"]["country"])
 print("|"+" "*(column_width-12),"Coordinates:",iss["nearestLocation"]["coordinates"])
