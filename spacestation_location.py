@@ -77,9 +77,9 @@ while running:
         # END
         print(" "+"-"*pagebreak)
     else:
-        print("Distance to",nearestLocation["city"]+",",nearestLocation["country"]+":", distanceKm,"km", "("+str(distanceMi),"miles)")
+        print(iss["time"],"Distance to",nearestLocation["city"]+",",nearestLocation["country"]+":", distanceKm,"km", "("+str(distanceMi),"miles)")
     # PAUSE
     # for seconds in range(10):
-    time.sleep(2)
+    time.sleep(5)
     # # CLEAR TERMINAL
     # print(chr(27) + "[2J")
