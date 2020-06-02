@@ -4,7 +4,7 @@ from datetime import datetime
 import reverse_geocode
 
 # VISUAL DISPLAY PARAMETERS
-column_width = 17
+column_width = 18
 pagebreak = 65
 
 # GET ISS INTERNATIONAL SPACE STATION LOCATION
@@ -14,7 +14,7 @@ getIss = requests.get("http://api.open-notify.org/iss-now.json").json()
 iss = {
     "time": datetime.fromtimestamp(getIss["timestamp"]),
     "timestamp": getIss["timestamp"],
-    "coordinates": (getIss["iss_position"]["longitude"], getIss["iss_position"]["latitude"])
+    "coordinates": (getIss["iss_position"]["latitude"],getIss["iss_position"]["longitude"])
 }
 # Find the nearest city of the iss coordinates and store it with the current iss data
 iss["nearestLocation"] = reverse_geocode.get(iss["coordinates"])
@@ -44,9 +44,11 @@ print("|"+" "*(column_width-5),"City:", iss["nearestLocation"]["city"])
 print("|"+" "*(column_width-8),"Country:", iss["nearestLocation"]["country"])
 print("|"+" "*(column_width-12),"Coordinates:",iss["nearestLocation"]["coordinates"])
 
-# DISTANCE BETWEEN NEAREST ISS AND NEAREST CITY
-
+# # DISTANCE BETWEEN NEAREST ISS AND NEAREST CITY
+from geopy.distance import geodesic 
+iss["nearestLocation"]["distance"] = geodesic(iss["coordinates"], iss["nearestLocation"]["coordinates"]).km
+distanceKm = round(iss["nearestLocation"]["distance"], 1)
+print("|"+" "*(column_width-len("Distance from ISS:")),"Distance from ISS:", distanceKm,"km")
 
 # END
 print(" "+"-"*pagebreak)
-print(iss["nearestLocation"])
