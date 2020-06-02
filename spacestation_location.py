@@ -22,6 +22,7 @@ iss["nearestLocation"] = reverse_geocode.get(iss["coordinates"])
 # DISPLAY ISS
 print(" "+"-"*pagebreak)
 print("| International Space Station")
+print()
 print("|"+" "*(column_width-5),"Time:", iss["time"])
 print("|"+" "*(column_width-12),"Coordinates:",iss["coordinates"])
 
@@ -40,15 +41,20 @@ iss["nearestLocation"]["coordinates"] = (lat, lon)
 # DISPLAY NEAREST EARTH CITY
 print(" "+"-"*pagebreak)
 print("| Nearest Earth City")
+print()
 print("|"+" "*(column_width-5),"City:", iss["nearestLocation"]["city"])
 print("|"+" "*(column_width-8),"Country:", iss["nearestLocation"]["country"])
 print("|"+" "*(column_width-12),"Coordinates:",iss["nearestLocation"]["coordinates"])
 
 # # DISTANCE BETWEEN NEAREST ISS AND NEAREST CITY
 from geopy.distance import geodesic 
-iss["nearestLocation"]["distance"] = geodesic(iss["coordinates"], iss["nearestLocation"]["coordinates"]).km
-distanceKm = round(iss["nearestLocation"]["distance"], 1)
-print("|"+" "*(column_width-len("Distance from ISS:")),"Distance from ISS:", distanceKm,"km")
+iss["nearestLocation"]["distance"] = {
+    "km": geodesic(iss["coordinates"], iss["nearestLocation"]["coordinates"]).km,
+    "mi": geodesic(iss["coordinates"], iss["nearestLocation"]["coordinates"]).mi
+}
+distanceKm = round(iss["nearestLocation"]["distance"]["km"], 1) # cleanup decimals for display
+distanceMi = round(iss["nearestLocation"]["distance"]["mi"], 1) # cleanup decimals for display
+print("|"+" "*(column_width-len("Distance from ISS:")),"Distance from ISS:", distanceKm,"km", "("+str(distanceMi),"miles)")
 
 # END
 print(" "+"-"*pagebreak)
