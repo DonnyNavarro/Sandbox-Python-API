@@ -1,6 +1,7 @@
 import requests
 import cmd
 import os
+import json
 from datetime import datetime
 # External ENV file support
 #   Then we can store secure environmentals in the .env file, and grab them with os.getenv("varname")
@@ -145,6 +146,13 @@ class prompt(cmd.Cmd):
         else:
             print(" No threats found between",firstdate,"and",lastdate)
             print("Run <check> to find threats.")
+
+    def do_save(self, arg):
+        """Save the threats that have been checked"""
+        # Save files with datetime to make each file unique and avoid overwriting
+        time = datetime.today().strftime('-%Y-%m-%d-%H%M%S')
+        with open("logs/threats"+time+".json", "w") as outfile:
+            json.dump(threats, outfile, indent=4)
 
     def do_threats(self, arg):
         global threats
