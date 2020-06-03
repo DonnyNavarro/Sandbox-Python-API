@@ -99,6 +99,20 @@ class prompt(cmd.Cmd):
         print(" "+"-"*pagebreak)
         return True
 
+    def do_who(self, arg):
+        """Display humans that are currently in space"""
+        # Get the response from the API endpoint.
+        astronauts = requests.get("http://api.open-notify.org/astros.json").json()
+        print(" "+"-"*pagebreak)
+        # The number of people in space
+        print("|",astronauts["number"],"Humans currently offworld")
+        print(" "+" -"*int(pagebreak/2))
+        # Names of people in space
+        for person in astronauts["people"]:
+            print("|"+" "*(column_width-len(person["name"]))+person["name"]+":", person["craft"])
+        print(" "+"-"*pagebreak)
+        return True
+
 if __name__ == '__main__':
     column_width = 20
     pagebreak = 65
