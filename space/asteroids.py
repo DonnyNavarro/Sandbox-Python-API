@@ -7,7 +7,7 @@ startdate = "2020-06-02"
 running = True
 while running == True:
 
-    asteroids = requests.get('https://api.nasa.gov/neo/rest/v1/feed?start_date='+startdate+'&api_key='+apikey["nasa"]).json()
+    asteroids = requests.get('https://api.nasa.gov/neo/rest/v1/feed?start_date='+startdate+'&api_key='+API_KEY).json()
 
     # Grab a list of all the dates in the data
     #   We will use this list to iterate through the data
