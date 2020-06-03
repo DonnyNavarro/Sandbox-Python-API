@@ -24,12 +24,12 @@ def checkAsteroids(startdate):
 
     lastdate = allDates[-1]
     for date in allDates:
-        print(" "+"-"*50)
+        print(" "+"-"*pagewidth)
         print("| Report for",date)
 
         # Start each day presuming there are no threats
         todayThreat = False
-        
+
         # Check each asteroid in this date
         for asteroid in asteroids["near_earth_objects"][date]:
             if asteroid["is_potentially_hazardous_asteroid"] == True:
@@ -59,6 +59,35 @@ def checkAsteroids(startdate):
         print("|") # Break between day reports
     return lastdate
 
+def displayAsteroid(asteroid):
+    for name in asteroid:
+        print(" -"*(int(pagewidth/2)))
+        print("|         Name:",name)
+        print("|     Velocity:",round(float(asteroid[name]["velocity"]["mph"]),2),"mph")
+        print("|     Diameter:",round(asteroid[name]["diameter"]["minimum"],2),"to",round(asteroid[name]["diameter"]["maximum"],2),"meters")
+
+def biggestYet():
+    global threats
+    biggestSize = 0
+    biggest = {} # Asteroid data for the biggest asteroid in threats
+    for asteroid in threats:
+        if threats[asteroid]["diameter"]["maximum"] > biggestSize:
+            biggest = {}
+            biggestSize = threats[asteroid]["diameter"]["maximum"]
+            biggest[asteroid] = threats[asteroid]
+    return biggest
+
+def fastestYet():
+    global threats
+    fastestSpeed = 0
+    fastest = {} # Asteroid data for the fastest asteroid in threats
+    for asteroid in threats:
+        if float(threats[asteroid]["velocity"]["mph"]) > fastestSpeed:
+            fastest = {}
+            fastestSpeed = float(threats[asteroid]["velocity"]["mph"])
+            fastest[asteroid] = threats[asteroid]
+    return fastest
+
 class prompt(cmd.Cmd):
     """Command line input prompt"""
     prompt = " (Type <help> to see available commands)\n: "
@@ -82,10 +111,37 @@ class prompt(cmd.Cmd):
         startdate = checkAsteroids(startdate)
         return True
 
+    def do_biggest(self, arg):
+        biggest = biggestYet()
+        if biggest:
+            print(" "+"-"*pagewidth)
+            print("| Biggest asteroid found so far:")
+            displayAsteroid(biggest)
+            print(" "+"-"*pagewidth)
+        else:
+            print(" No threats found so far. Run <check> to find threats.")
+
+    def do_fastest(self, arg):
+        fastest = fastestYet()
+        if fastest:
+            print(" "+"-"*pagewidth)
+            print("| Fastest asteroid found so far:")
+            displayAsteroid(fastest)
+            print(" "+"-"*pagewidth)
+        else:
+            print(" No threats found so far. Run <check> to find threats.")
+
+    def do_threats(self, arg):
+        global threats
+        print(threats)
+
 if __name__ == '__main__':
     running = True
     startdate = "2020-06-02"
     threats = {}
+    pagewidth = 50
 
     while running == True:
         prompt().cmdloop()
+
+# TODO: At the end of each week check, print the fastest and the largest asteroids found to date
