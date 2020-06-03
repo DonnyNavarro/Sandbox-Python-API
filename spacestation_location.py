@@ -58,7 +58,7 @@ def displayLocation(location):
 
     # Cleanup Full Desc: It can be really long with alternative names, so protect the page width beauty
     desc = nearestGeodata[0]["display_name"]
-    descTrunc = desc[:50] + (desc[50:] and '..')
+    descTrunc = desc[:45] + (desc[45:] and '...')
 
     # Print Location Info
     print("|"+" "*(column_width-5),"City:", location["city"])
