@@ -28,13 +28,11 @@ def getNearestLocation(iss):
     """Return the nearest city to the ISS"""
     
     nearestLocation = reverse_geocode.get(iss["coordinates"])
-    # print("[debug] dumps",json.dumps(nearestGeodata))
     return nearestLocation
 
-def getLocationCoordinates(location):
-    geodata = requests.get('https://nominatim.openstreetmap.org/search/' + urllib.parse.quote(location["city"]+","+location["country"]) +'?format=json').json()
-    lat = geodata[0]["lat"]
-    lon = geodata[0]["lon"]
+def getLocationCoordinates(locationGeodata):
+    lat = locationGeodata[0]["lat"]
+    lon = locationGeodata[0]["lon"]
     nearestCoordinates = (lat, lon)
     return nearestCoordinates
 
@@ -50,9 +48,24 @@ def displayDistance(coord1, coord2):
     print("|"+" "*(column_width-len("Distance from ISS:")),"Distance from ISS:", distanceKm,"km", "("+str(distanceMi),"miles)")
 
 def displayLocation(location):
+    global iss # idk should this be an arg pass? does it matter?
     """Display a report of the city"""
+    
+    # Grab a more detailed summary of the location
+    #   Needed for coordinates
+    #   Needed for full desc
+    nearestGeodata = requests.get('https://nominatim.openstreetmap.org/search/' + urllib.parse.quote(location["city"]+","+location["country"]) +'?format=json').json()
+
+    # Cleanup Full Desc: It can be really long with alternative names, so protect the page width beauty
+    desc = nearestGeodata[0]["display_name"]
+    descTrunc = desc[:50] + (desc[50:] and '..')
+
+    # Print Location Info
     print("|"+" "*(column_width-5),"City:", location["city"])
     print("|"+" "*(column_width-8),"Country:", location["country"])
+    print("|"+" "*(column_width-12),"Description:",descTrunc)
+
+    displayDistance(iss["coordinates"], getLocationCoordinates(nearestGeodata))
     
 class prompt(cmd.Cmd):
     """Command line input prompt"""
@@ -92,7 +105,6 @@ if __name__ == '__main__':
         print(" -"*int(pagebreak/2))
         nearest = getNearestLocation(iss)
         displayLocation(nearest)
-        displayDistance(iss["coordinates"], getLocationCoordinates(nearest))
 
         print(" "+"-"*pagebreak)
 
