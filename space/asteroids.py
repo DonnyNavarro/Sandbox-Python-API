@@ -1,6 +1,7 @@
 import requests
 import cmd
 import os
+from datetime import datetime
 # External ENV file support
 #   Then we can store secure environmentals in the .env file, and grab them with os.getenv("varname")
 from dotenv import load_dotenv
@@ -11,7 +12,7 @@ load_dotenv(os.path.join(project_folder, '.env'))
 API_KEY = os.getenv("NASA_API_KEY") # Stored in .env
 
 def checkAsteroids(startdate):
-
+    global lastdate
     asteroids = requests.get('https://api.nasa.gov/neo/rest/v1/feed?start_date='+startdate+'&api_key='+API_KEY).json()
 
     # Grab a list of all the dates in the data
@@ -34,35 +35,45 @@ def checkAsteroids(startdate):
         for asteroid in asteroids["near_earth_objects"][date]:
             if asteroid["is_potentially_hazardous_asteroid"] == True:
                 todayThreat = True
-                threats[asteroid["name"]] = {
-                    "date": asteroid["close_approach_data"][0]["close_approach_date_full"],
-                    "velocity": {
-                        "kmps": asteroid["close_approach_data"][0]["relative_velocity"]["kilometers_per_second"],
-                        "kmph": asteroid["close_approach_data"][0]["relative_velocity"]["kilometers_per_hour"],
-                        "mph": asteroid["close_approach_data"][0]["relative_velocity"]["miles_per_hour"]
-                    },
-                    "diameter": {
-                        "minimum": asteroid["estimated_diameter"]["meters"]["estimated_diameter_min"],
-                        "maximum": asteroid["estimated_diameter"]["meters"]["estimated_diameter_max"]
+                newThreat = {
+                    asteroid["name"]: {
+                        "time": asteroid["close_approach_data"][0]["close_approach_date_full"],
+                        "velocity": {
+                            "kmps": asteroid["close_approach_data"][0]["relative_velocity"]["kilometers_per_second"],
+                            "kmph": asteroid["close_approach_data"][0]["relative_velocity"]["kilometers_per_hour"],
+                            "mph": asteroid["close_approach_data"][0]["relative_velocity"]["miles_per_hour"]
+                        },
+                        "diameter": {
+                            "minimum": asteroid["estimated_diameter"]["meters"]["estimated_diameter_min"],
+                            "maximum": asteroid["estimated_diameter"]["meters"]["estimated_diameter_max"]
+                        }
                     }
                 }
+                # Check for missing times and replace them with the projection date
+                if newThreat[asteroid["name"]]["time"] == None:
+                    newThreat[asteroid["name"]]["time"] = date
 
-                print("|")
-                print("| <ALARM> Potentially Hazardous Asteroid")
-                print("|         Name:",asteroid["name"])
-                print("|     Velocity:",round(float(threats[asteroid["name"]]["velocity"]["mph"]),2),"mph")
-                print("|     Diameter:",round(threats[asteroid["name"]]["diameter"]["minimum"],2),"to",round(threats[asteroid["name"]]["diameter"]["maximum"],2),"meters")
+                # Add the new threat to our threat tracker
+                threats[asteroid["name"]] = newThreat[asteroid["name"]]
+                
+                # Print the new threat stats
+                print(" -"*int(pagewidth/2))
+                print("|   <ALARM> Potentially Hazardous Asteroid <ALARM>")
+                displayAsteroid(newThreat)
+                print("|") # Break between day reports
 
         if not todayThreat:
-            print("| <CLEAR> There will be no threats on",date)
+            print("|   <CLEAR> There will be no threats on",date)
 
-        print("|") # Break between day reports
+            print("|") # Break between day reports
+    print(" "+"-"*pagewidth)
     return lastdate
 
 def displayAsteroid(asteroid):
     for name in asteroid:
         print(" -"*(int(pagewidth/2)))
         print("|         Name:",name)
+        print("|         Time:",asteroid[name]["time"])
         print("|     Velocity:",round(float(asteroid[name]["velocity"]["mph"]),2),"mph")
         print("|     Diameter:",round(asteroid[name]["diameter"]["minimum"],2),"to",round(asteroid[name]["diameter"]["maximum"],2),"meters")
 
@@ -115,21 +126,25 @@ class prompt(cmd.Cmd):
         biggest = biggestYet()
         if biggest:
             print(" "+"-"*pagewidth)
-            print("| Biggest asteroid found so far:")
+            print("| Biggest asteroid")
+            print("| Threatening Earth between",firstdate,"and",lastdate)
             displayAsteroid(biggest)
             print(" "+"-"*pagewidth)
         else:
-            print(" No threats found so far. Run <check> to find threats.")
+            print(" No threats found between",firstdate,"and",lastdate)
+            print("Run <check> to find threats.")
 
     def do_fastest(self, arg):
         fastest = fastestYet()
         if fastest:
             print(" "+"-"*pagewidth)
-            print("| Fastest asteroid found so far:")
+            print("| Fastest asteroid")
+            print("| Threatening Earth between",firstdate,"and",lastdate)
             displayAsteroid(fastest)
             print(" "+"-"*pagewidth)
         else:
-            print(" No threats found so far. Run <check> to find threats.")
+            print(" No threats found between",firstdate,"and",lastdate)
+            print("Run <check> to find threats.")
 
     def do_threats(self, arg):
         global threats
@@ -137,7 +152,9 @@ class prompt(cmd.Cmd):
 
 if __name__ == '__main__':
     running = True
-    startdate = "2020-06-02"
+    firstdate = datetime.today().strftime('%Y-%m-%d')
+    startdate = firstdate # change this var to send api requests with different start dates
+    lastdate = firstdate # gets updated at the end of each run so we know what the last report was
     threats = {}
     pagewidth = 50
 
