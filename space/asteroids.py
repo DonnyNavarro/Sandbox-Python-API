@@ -27,18 +27,36 @@ def checkAsteroids(startdate):
         print(" "+"-"*50)
         print("| Report for",date)
 
+        # Start each day presuming there are no threats
+        todayThreat = False
+        
         # Check each asteroid in this date
-        threats = []
         for asteroid in asteroids["near_earth_objects"][date]:
             if asteroid["is_potentially_hazardous_asteroid"] == True:
-                threats.append(asteroid["name"])
-                print("| <ALARM> Potentially Hazardous Asteroid:",asteroid["name"])
+                todayThreat = True
+                threats[asteroid["name"]] = {
+                    "date": asteroid["close_approach_data"][0]["close_approach_date_full"],
+                    "velocity": {
+                        "kmps": asteroid["close_approach_data"][0]["relative_velocity"]["kilometers_per_second"],
+                        "kmph": asteroid["close_approach_data"][0]["relative_velocity"]["kilometers_per_hour"],
+                        "mph": asteroid["close_approach_data"][0]["relative_velocity"]["miles_per_hour"]
+                    },
+                    "diameter": {
+                        "minimum": asteroid["estimated_diameter"]["meters"]["estimated_diameter_min"],
+                        "maximum": asteroid["estimated_diameter"]["meters"]["estimated_diameter_max"]
+                    }
+                }
 
-        if not threats:
+                print("|")
+                print("| <ALARM> Potentially Hazardous Asteroid")
+                print("|         Name:",asteroid["name"])
+                print("|     Velocity:",round(float(threats[asteroid["name"]]["velocity"]["mph"]),2),"mph")
+                print("|     Diameter:",round(threats[asteroid["name"]]["diameter"]["minimum"],2),"to",round(threats[asteroid["name"]]["diameter"]["maximum"],2),"meters")
+
+        if not todayThreat:
             print("| <CLEAR> There will be no threats on",date)
 
         print("|") # Break between day reports
-    
     return lastdate
 
 class prompt(cmd.Cmd):
@@ -59,7 +77,7 @@ class prompt(cmd.Cmd):
         quit()
 
     def do_check(self, arg):
-        """Check for upcoming asteroid threats"""
+        """Check for upcoming asteroid threats. Each time will check the following week."""
         global startdate
         startdate = checkAsteroids(startdate)
         return True
@@ -67,6 +85,7 @@ class prompt(cmd.Cmd):
 if __name__ == '__main__':
     running = True
     startdate = "2020-06-02"
+    threats = {}
 
     while running == True:
         prompt().cmdloop()
