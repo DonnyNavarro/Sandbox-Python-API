@@ -64,12 +64,11 @@ def displayLocation(location):
     print("|"+" "*(column_width-5),"City:", location["city"])
     print("|"+" "*(column_width-8),"Country:", location["country"])
     print("|"+" "*(column_width-12),"Description:",descTrunc)
-
     displayDistance(iss["coordinates"], getLocationCoordinates(nearestGeodata))
     
 class prompt(cmd.Cmd):
     """Command line input prompt"""
-    prompt = ": "
+    prompt = " (Type <help> to see available commands)\n: "
 
     def emptyline(self):
         return False
@@ -86,26 +85,26 @@ class prompt(cmd.Cmd):
 
     def do_where(self, arg):
         """Display the location of the International Space Station"""
+        global iss
+        print(" "+"-"*pagebreak)
+        print("| International Space Station")
+        print(" -"*int(pagebreak/2))
+        iss = getIss()
+        displayIss(iss)
+        print(" "+"-"*pagebreak)
+        print("| Nearest Earth City")
+        print(" -"*int(pagebreak/2))
+        nearest = getNearestLocation(iss)
+        displayLocation(nearest)
+        print(" "+"-"*pagebreak)
         return True
 
 if __name__ == '__main__':
     column_width = 20
     pagebreak = 65
     running = True
+    global iss
+    prompt.do_where(False, False) # Use where display as intro splash for now
 
     while running == True:
-        print(" "+"-"*pagebreak)
-        print("| International Space Station")
-        print(" -"*int(pagebreak/2))
-        iss = getIss()
-        displayIss(iss)
-
-        print(" "+"-"*pagebreak)
-        print("| Nearest Earth City")
-        print(" -"*int(pagebreak/2))
-        nearest = getNearestLocation(iss)
-        displayLocation(nearest)
-
-        print(" "+"-"*pagebreak)
-
         prompt().cmdloop()
