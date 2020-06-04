@@ -1,0 +1,1 @@
+This folder is used to dump logs into by the SAVE command
