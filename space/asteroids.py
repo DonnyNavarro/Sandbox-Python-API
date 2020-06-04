@@ -45,8 +45,12 @@ def checkAsteroids(startdate):
                             "mph": asteroid["close_approach_data"][0]["relative_velocity"]["miles_per_hour"]
                         },
                         "diameter": {
-                            "minimum": asteroid["estimated_diameter"]["meters"]["estimated_diameter_min"],
-                            "maximum": asteroid["estimated_diameter"]["meters"]["estimated_diameter_max"]
+                            "min": asteroid["estimated_diameter"]["meters"]["estimated_diameter_min"],
+                            "max": asteroid["estimated_diameter"]["meters"]["estimated_diameter_max"]
+                        },
+                        "miss": {
+                            "km": asteroid["close_approach_data"][0]["miss_distance"]["kilometers"],
+                            "miles": asteroid["close_approach_data"][0]["miss_distance"]["miles"]
                         }
                     }
                 }
@@ -76,16 +80,21 @@ def displayAsteroid(asteroid):
         print("|         Name:",name)
         print("|         Time:",asteroid[name]["time"])
         print("|     Velocity:",round(float(asteroid[name]["velocity"]["mph"]),2),"mph")
-        print("|     Diameter:",round(asteroid[name]["diameter"]["minimum"],2),"to",round(asteroid[name]["diameter"]["maximum"],2),"meters")
+        print("|     Diameter:",round(asteroid[name]["diameter"]["min"],2),"to",round(asteroid[name]["diameter"]["max"],2),"meters")
+        print("|         Miss:",round(float(asteroid[name]["miss"]["km"]),2),"km")
+        
+        if not asteroid[name]["miss"]["km"]:
+            print("\n"*10)
+            print("| WARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNING")
 
 def biggestYet():
     global threats
     biggestSize = 0
     biggest = {} # Asteroid data for the biggest asteroid in threats
     for asteroid in threats:
-        if threats[asteroid]["diameter"]["maximum"] > biggestSize:
+        if threats[asteroid]["diameter"]["max"] > biggestSize:
             biggest = {}
-            biggestSize = threats[asteroid]["diameter"]["maximum"]
+            biggestSize = threats[asteroid]["diameter"]["max"]
             biggest[asteroid] = threats[asteroid]
     return biggest
 
@@ -99,6 +108,17 @@ def fastestYet():
             fastestSpeed = float(threats[asteroid]["velocity"]["mph"])
             fastest[asteroid] = threats[asteroid]
     return fastest
+
+def closestYet():
+    global threats
+    closestMiss = 99999999999999999999
+    closest = {} # Asteroid data for the smallest miss in threats
+    for asteroid in threats:
+        if float(threats[asteroid]["miss"]["km"]) < closestMiss:
+            closest = {}
+            closestMiss = float(threats[asteroid]["miss"]["km"])
+            closest[asteroid] = threats[asteroid]
+    return closest
 
 class prompt(cmd.Cmd):
     """Command line input prompt"""
@@ -118,12 +138,13 @@ class prompt(cmd.Cmd):
         quit()
 
     def do_check(self, arg):
-        """Check for upcoming asteroid threats. Each time will check the following week."""
+        """Check for upcoming asteroid threats. Each use will check the following week."""
         global startdate
         startdate = checkAsteroids(startdate)
         return True
 
     def do_biggest(self, arg):
+        """Display the biggest threat that has been checked so far"""
         biggest = biggestYet()
         if biggest:
             print(" "+"-"*pagewidth)
@@ -136,6 +157,7 @@ class prompt(cmd.Cmd):
             print("Run <check> to find threats.")
 
     def do_fastest(self, arg):
+        """Display the fastest threat that has been checked so far"""
         fastest = fastestYet()
         if fastest:
             print(" "+"-"*pagewidth)
@@ -147,16 +169,31 @@ class prompt(cmd.Cmd):
             print(" No threats found between",firstdate,"and",lastdate)
             print("Run <check> to find threats.")
 
+    def do_closest(self, arg):
+        """Display the closest miss from the threats that have been checked so far"""
+        closest = closestYet()
+        if closest:
+            print(" "+"-"*pagewidth)
+            print("| Closest asteroid")
+            print("| Threatening Earth between",firstdate,"and",lastdate)
+            displayAsteroid(closest)
+            print(" "+"-"*pagewidth)
+        else:
+            print(" No threats found between",firstdate,"and",lastdate)
+            print("Run <check> to find threats.")
+
+
     def do_save(self, arg):
         """Save the threats that have been checked"""
-        # Save files with datetime to make each file unique and avoid overwriting
+        # Filename with datetime to make each file unique and avoid overwriting
         time = datetime.today().strftime('-%Y-%m-%d-%H%M%S')
         with open("logs/threats"+time+".json", "w") as outfile:
             json.dump(threats, outfile, indent=4)
 
     def do_threats(self, arg):
+        """Display all the threat data that has been checked so far"""
         global threats
-        print(threats)
+        print(json.dumps(threats, indent=4))
 
 if __name__ == '__main__':
     running = True
