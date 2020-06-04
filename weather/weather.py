@@ -101,11 +101,22 @@ def test(tc):
     for name in tc:
         print("Running Test Case:",(name).title())
 
-    # TODO: Create logic to execute testcases 
+    testValue = tc["test value"]
+    threshold = tc["fail threshold"]
+    comparison = tc["fail comparison"]
+
+def getActual(field, data):
+    """Provide the name of a field and response data, and return the value in the data that corresponds to that field"""
+    valueActualMap = {
+        "temp": response["main"]["temp"],
+        "humidity": response["main"]["humidity"],
+        "wind speed": response["wind"]["speed"]
+    }
+    return valueActualMap[field]
 
 class prompt(cmd.Cmd):
     """Command line input prompt"""
-    prompt = " (Type <help> to see available commands)\n: "
+    prompt = "\n (Type <help> to see available commands)\n: "
 
     def emptyline(self):
         return False
@@ -147,6 +158,14 @@ class prompt(cmd.Cmd):
         global nextTestCase
         nextTestCase = tcsToRun[arg]
         print("Next TC to run:",{arg: nextTestCase})
+
+    def do_test(self, arg):
+        """Run a specfic testcase immediately"""
+        test({arg: testcases[arg]})
+
+    def do_try(self, arg):
+        """Send a request for today's weather to a city, included as an argument"""
+        getCityWeather(arg)
 
 if __name__ == '__main__':
     running = True
