@@ -83,11 +83,40 @@ def displayTemps(weather):
             thisFare = str(thisTemp["farenheit"])+" farenheit"
             print(rowName+thisCels+thisFare)
 
-# Examples and testing
-testCoords = (37.22, -93.3)
-# getCoordWeather(testCoords)
+def getTestcases(filename="testcases"):
+    """Return testcases as an object based on a local JSON file"""
+    with open(filename+".json") as testcases:
+        # Return the testcases file as a python dictionary
+        return json.load(testcases)
 
-test = getCityWeather("Tallahassee")
-print("Location"+"."*(columnwidth-len("Location"))+test["name"])
-displayTemps(test)
+def displayTestcases(tcs):
+    """Display currently readied testcases"""
+    for tc in tcs:
+        print(tc,tcs[tc])
+
+def getNextTestcase(tcs):
+    """Remove a tc from tcsToRun and return it"""
+    for tc in tcs:
+        return {tc: tcs.pop(tc)}
+
+# Load a dictionary of testcases
+testcases = getTestcases()
+displayTestcases(testcases)
+# Create a dictionary of testcases, to have tcs removed as they are run
+tcsToRun = testcases
+# Grab a tc from tcToRun and queue it up
+nextTestCase = getNextTestcase(tcsToRun)
+print("Next TC to run:",nextTestCase)
+print("TCs still pending:",tcsToRun)
+
+# TODO: Consider whether it is better to track our todo list as a dictionary with full tc details or to just make a list of the keys
+# print("[debug]",testcases.keys())
+
+# # Examples and testing
+# testCoords = (37.22, -93.3)
+# # getCoordWeather(testCoords)
+
+# test = getCityWeather("Tallahassee")
+# print("Location"+"."*(columnwidth-len("Location"))+test["name"])
+# displayTemps(test)
 
