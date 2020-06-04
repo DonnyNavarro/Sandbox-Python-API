@@ -1,0 +1,18 @@
+{
+    "too hot": {
+        "test value": "temp",
+        "fail threshold": [70, "farenheit"]
+    },
+    "too cold": {
+        "test value": "temp",
+        "fail threshold": [50, "farenheit"]
+        }
+    },
+    "too humid": {
+        "test value": "humidity",
+        "fail threshold": 40
+    },
+    "too windy": {
+
+    }
+}
