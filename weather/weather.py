@@ -3,6 +3,16 @@ import json
 import cmd
 import reverse_geocode
 import pytemperature
+import operator
+ops = {
+    ">": operator.gt,
+    ">=": operator.ge,
+    "<": operator.lt,
+    "<=": operator.le,
+    "==": operator.eq,
+    "!=": operator.ne
+}
+
 # External ENV file support
 #   Then we can store secure environmentals in the .env file, and grab them with os.getenv("varname")
 import os
@@ -60,6 +70,7 @@ def sendRequest(url):
     return response
 
 def convertTemp(kelvin):
+    print("[debug]",kelvin)
     celsius = round(pytemperature.k2c(kelvin), 2) # Kelvin to Celsius
     farenheit = round(pytemperature.k2f(kelvin), 2) # Kelvin to Fahrenheit
 
@@ -96,16 +107,30 @@ def getNextTestcase(tcs):
     for tc in tcs:
         return {tc: tcs.pop(tc)}
 
-def test(tc):
+def testTodayWeather(tc):
     """Execute a test based on the parameters in the tc"""
     for name in tc:
         print("Running Test Case:",(name).title())
+        testName = (name).title()
+        testValue = tc[name]["test value"]
+        threshold = tc[name]["fail threshold"]
+        comparison = tc[name]["fail comparison"]
+        testThresholdType = tc[name]["threshold type"] if "threshold type" in tc[name] else False
 
-    testValue = tc["test value"]
-    threshold = tc["fail threshold"]
-    comparison = tc["fail comparison"]
+    testResponse = getCityWeather("London")
 
-def getActual(field, data):
+    actual = getActual(testValue, testResponse)
+    if testThresholdType:
+        convertedTemp = convertTemp(actual)
+        actual = convertedTemp[testThresholdType]
+
+    # Compare the actuals to the thresholds using the comparison operator
+    if ops[comparison](actual,threshold):
+        print(testName+"? <FAIL>",actual,"is",comparison,threshold)
+    else:
+        print(testName+"? <PASS>",actual,"is not",comparison,threshold)
+    
+def getActual(field, response):
     """Provide the name of a field and response data, and return the value in the data that corresponds to that field"""
     valueActualMap = {
         "temp": response["main"]["temp"],
@@ -147,24 +172,24 @@ class prompt(cmd.Cmd):
 
     def do_testnext(self, arg):
         """Run the next testcase. You can display what TC this will be with the <next> command"""
-        test(nextTestCase)
+        testTodayWeather(nextTestCase)
 
     def do_reload(self, arg):
         """Reload the testcase queue from scratch"""
         return True
 
     def do_load(self, arg):
-        """Load a specific testcase to be run next"""
+        """Load a specific testcase to be run next, specified as an argument"""
         global nextTestCase
         nextTestCase = tcsToRun[arg]
         print("Next TC to run:",{arg: nextTestCase})
 
     def do_test(self, arg):
-        """Run a specfic testcase immediately"""
-        test({arg: testcases[arg]})
+        """Run a specfic testcase immediately, specified as an argument"""
+        testTodayWeather({arg: testcases[arg]}) if arg in testcases else print("ERROR: Please specify which testcase to test!")
 
     def do_try(self, arg):
-        """Send a request for today's weather to a city, included as an argument"""
+        """Send a request for today's weather to a city, specified as an argument"""
         getCityWeather(arg)
 
 if __name__ == '__main__':
