@@ -107,8 +107,8 @@ def getNextTestcase(tcs):
     for tc in tcs:
         return {tc: tcs.pop(tc)}
 
-def testTodayWeather(tc):
-    """Execute a test based on the parameters in the tc"""
+def testTodayWeather(city, tc):
+    """Execute a test on a city's weather based on the parameters in the tc"""
     for name in tc:
         print("Running Test Case:",(name).title())
         testName = (name).title()
@@ -117,7 +117,7 @@ def testTodayWeather(tc):
         comparison = tc[name]["fail comparison"]
         testThresholdType = tc[name]["threshold type"] if "threshold type" in tc[name] else False
 
-    testResponse = getCityWeather("London")
+    testResponse = getCityWeather(city)
 
     actual = getActual(testValue, testResponse)
     if testThresholdType:
@@ -126,9 +126,9 @@ def testTodayWeather(tc):
 
     # Compare the actuals to the thresholds using the comparison operator
     if ops[comparison](actual,threshold):
-        print(testName+"? <FAIL>",actual,"is",comparison,threshold)
+        print(city+" | "+testName+"? <FAIL>",actual,"is",comparison,threshold)
     else:
-        print(testName+"? <PASS>",actual,"is not",comparison,threshold)
+        print(city+" | "+testName+"? <PASS>",actual,"is not",comparison,threshold)
     
 def getActual(field, response):
     """Provide the name of a field and response data, and return the value in the data that corresponds to that field"""
@@ -156,6 +156,16 @@ class prompt(cmd.Cmd):
         """Close the program"""
         quit()
 
+    def do_reload(self, arg):
+        """Reload the testcase queue from scratch"""
+        return True
+
+    def do_load(self, arg):
+        """Load a specific testcase to be run next, specified as an argument"""
+        global nextTestCase
+        nextTestCase = tcsToRun[arg]
+        print("Next TC to run:",{arg: nextTestCase})
+
     def do_loadnext(self, arg):
         """Load the next testcase so that it is ready to be run"""
         # Grab a tc from tcToRun and queue it up
@@ -174,28 +184,30 @@ class prompt(cmd.Cmd):
         """Run the next testcase. You can display what TC this will be with the <next> command"""
         testTodayWeather(nextTestCase)
 
-    def do_reload(self, arg):
-        """Reload the testcase queue from scratch"""
-        return True
-
-    def do_load(self, arg):
-        """Load a specific testcase to be run next, specified as an argument"""
-        global nextTestCase
-        nextTestCase = tcsToRun[arg]
-        print("Next TC to run:",{arg: nextTestCase})
-
     def do_test(self, arg):
         """Run a specfic testcase immediately, specified as an argument"""
-        testTodayWeather({arg: testcases[arg]}) if arg in testcases else print("ERROR: Please specify which testcase to test!")
+        if not city:
+            print("ERROR: Use the <city> command to specify a city!")
+        else:
+            if arg in testcases:
+                testTodayWeather(city, {arg: testcases[arg]})     
+            else:
+                print("ERROR: Please specify which testcase to test!")
 
     def do_try(self, arg):
         """Send a request for today's weather to a city, specified as an argument"""
         getCityWeather(arg)
 
+    def do_city(self, arg):
+        if arg:
+            global city
+            city = (arg).title()
+
 if __name__ == '__main__':
     running = True
     apikey = os.getenv("APIKEY_OPENWEATHERMAP")
     columnwidth = 15
+    global city
 
     while running == True:
         testcases = getTestcases() # Load a dictionary of testcases
