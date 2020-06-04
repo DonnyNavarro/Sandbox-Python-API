@@ -1,20 +1,20 @@
 import requests
 import cmd
-import os
 import json
 from datetime import datetime
 # External ENV file support
 #   Then we can store secure environmentals in the .env file, and grab them with os.getenv("varname")
+import os
 from dotenv import load_dotenv
 project_folder = os.path.expanduser('') # local path
 load_dotenv(os.path.join(project_folder, '.env'))
 # End ENV file setup
 
-API_KEY = os.getenv("NASA_API_KEY") # Stored in .env
+APIKEY = os.getenv("APIKEY_NASA") # Stored in .env
 
 def checkAsteroids(startdate):
     global lastdate
-    asteroids = requests.get('https://api.nasa.gov/neo/rest/v1/feed?start_date='+startdate+'&api_key='+API_KEY).json()
+    asteroids = requests.get('https://api.nasa.gov/neo/rest/v1/feed?start_date='+startdate+'&api_key='+APIKEY).json()
 
     # Grab a list of all the dates in the data
     #   We will use this list to iterate through the data
