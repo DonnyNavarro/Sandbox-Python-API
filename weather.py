@@ -11,34 +11,41 @@ load_dotenv(os.path.join(project_folder, '.env'))
 
 apikey = os.getenv("APIKEY_OPENWEATHERMAP")
 
-def sanitize(arg, type):
-    # Sanitize Location Variables
+def sanitize(arg, locType):
+    """Sanitize variables for use in URLs"""
     #   Cities with spaces in their names
     #   States are optional
-    if "type" == "city":
+    if locType == "city":
         return arg.replace(" ", "+")
-    if "type" == "state":
+
+    if locType == "state":
         return ","+arg if arg != "" else ""
 
 def getCityWeather(city, state=""):
-    #################################
-    # GET TODAY'S WEATHER FOR CITY
+    """Get today's weather for a given city. State is optional, but if given then it needs to be a full name and not initials"""
     # Today's weather API URL
-    sanitize(city, "city")
-    sanitize(state, "state")
+    city = sanitize(city, "city")
+    state = sanitize(state, "state")
     sendRequest('https://api.openweathermap.org/data/2.5/weather?q='+city+state+'&appid='+apikey)
 
 def getCoordWeather(coords):
+    """Get today's weather for a given set of coordinates"""
     lat = str(coords[0])
     lon =  str(coords[1])
     sendRequest('https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid='+apikey)
+    print()
+    print("Nearest city:")
+    displayNearestCity(coords)
 
 def displayNearestCity(coords):
+    """Display the nearest city to a given pair of coordinates"""
+    # Mostly for troubleshooting that locations returned are correct
     nearestLocation = reverse_geocode.get(coords)
     print(nearestLocation)
     # targetCoords = (todayWeather["coord"]["lat"], todayWeather["coord"]["lon"])
 
 def sendRequest(url):
+    """Send an api request and print the response"""
     # Get today's weather for city, state
     print()
     print("Sending GET request to")
@@ -52,6 +59,6 @@ def sendRequest(url):
 
 # Examples and testing
 testCoords = (37.22, -93.3)
-getCoordWeather(testCoords)
+# getCoordWeather(testCoords)
 
-getCityWeather("Orlando")
+getCityWeather("Springfield", "Illinois")
