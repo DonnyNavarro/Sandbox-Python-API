@@ -10,9 +10,6 @@ from dotenv import load_dotenv
 project_folder = os.path.expanduser('') # local path
 load_dotenv(os.path.join(project_folder, '.env'))
 
-apikey = os.getenv("APIKEY_OPENWEATHERMAP")
-columnwidth = 15
-
 def sanitize(arg, locType):
     """Sanitize variables for use in URLs"""
     #   Cities with spaces in their names
@@ -99,15 +96,69 @@ def getNextTestcase(tcs):
     for tc in tcs:
         return {tc: tcs.pop(tc)}
 
-# Load a dictionary of testcases
-testcases = getTestcases()
-displayTestcases(testcases)
-# Create a dictionary of testcases, to have tcs removed as they are run
-tcsToRun = testcases
-# Grab a tc from tcToRun and queue it up
-nextTestCase = getNextTestcase(tcsToRun)
-print("Next TC to run:",nextTestCase)
-print("TCs still pending:",tcsToRun)
+def test(tc):
+    """Execute a test based on the parameters in the tc"""
+    for name in tc:
+        print("Running Test Case:",(name).title())
+
+    # TODO: Create logic to execute testcases 
+
+class prompt(cmd.Cmd):
+    """Command line input prompt"""
+    prompt = " (Type <help> to see available commands)\n: "
+
+    def emptyline(self):
+        return False
+
+    def precmd(self, line):
+        return cmd.Cmd.precmd(self, line)
+
+    def postcmd(self, stop, line):
+        return cmd.Cmd.postcmd(self, stop, line)
+
+    def do_quit(self, arg):
+        """Close the program"""
+        quit()
+
+    def do_loadnext(self, arg):
+        """Load the next testcase so that it is ready to be run"""
+        # Grab a tc from tcToRun and queue it up
+        global nextTestCase
+        nextTestCase = getNextTestcase(tcsToRun)
+
+    def do_next(self, arg):
+        """Display the testcase that is current loaded to be run"""
+        print("Next TC to run:",nextTestCase)
+
+    def do_pending(self, arg):
+        """Display the testcases that are still waiting to be run"""
+        print("TCs still pending:",tcsToRun)
+
+    def do_testnext(self, arg):
+        """Run the next testcase. You can display what TC this will be with the <next> command"""
+        test(nextTestCase)
+
+    def do_reload(self, arg):
+        """Reload the testcase queue from scratch"""
+        return True
+
+    def do_load(self, arg):
+        """Load a specific testcase to be run next"""
+        global nextTestCase
+        nextTestCase = tcsToRun[arg]
+        print("Next TC to run:",{arg: nextTestCase})
+
+if __name__ == '__main__':
+    running = True
+    apikey = os.getenv("APIKEY_OPENWEATHERMAP")
+    columnwidth = 15
+
+    while running == True:
+        testcases = getTestcases() # Load a dictionary of testcases
+        tcsToRun = testcases # Create a dictionary of testcases, to have tcs removed as they are run
+        nextTestCase = {}
+        displayTestcases(testcases)
+        prompt().cmdloop()
 
 # TODO: Consider whether it is better to track our todo list as a dictionary with full tc details or to just make a list of the keys
 # print("[debug]",testcases.keys())
