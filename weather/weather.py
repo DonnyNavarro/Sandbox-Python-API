@@ -37,7 +37,8 @@ def sendRequest(url):
     print("Request response received:")
     print(responsePrint)
 
-    displayLocation((response["coord"]["lat"], response["coord"]["lon"]))
+    location = displayLocation((response["coord"]["lat"], response["coord"]["lon"]))
+    response["location"] = location
     return response
 
 def displayLocation(coords):
@@ -46,6 +47,11 @@ def displayLocation(coords):
     locationDetails = reverse_geocoder.search(coords)
     print("     City:",locationDetails[0]["name"]+" ("+locationDetails[0]["admin2"]+")")
     print("  Country:",locationDetails[0]["admin1"]+", "+locationDetails[0]["cc"])
+    location = {
+        "city": locationDetails[0]["name"]+" ("+locationDetails[0]["admin2"]+")",
+        "country": locationDetails[0]["admin1"]+", "+locationDetails[0]["cc"]
+    }
+    return location
 
 def sanitize(arg, argType):
     """Sanitize variables for use in URLs"""
@@ -119,16 +125,21 @@ def testTodayWeather(city, tc):
     print("Testing "+city+" | "+testName+"?")
     result = testCompare(actual, comparison, threshold)
     if result == "Pass":
-        print("<PASS>",actual,"is",comparison,threshold,testThresholdType)
+        print("<PASS>",actual,"is not",comparison,threshold,testThresholdType)
     if result == "Fail":
         print("<FAIL>",actual,"is",comparison,threshold,testThresholdType)
     # Store the test results for later reference
-    results = {city: {
-        "result": result,
-        "time": datetime.today().strftime('%Y-%m-%d-%H%M%S'),
-        "parameters": tc,
-        "actual": actual
-        }}
+    results = {
+        city: {
+            "result": result,
+            "time": datetime.today().strftime('%Y-%m-%d-%H%M%S'),
+            "testcase": tc,
+            "actual": {
+                "tested value": actual,
+                "response": testResponse
+            }
+        }
+    }
     # Save the test results as a local log file
     saveLog(results, city+"-"+testName)
 
