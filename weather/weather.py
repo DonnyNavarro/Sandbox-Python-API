@@ -107,50 +107,62 @@ def getScope(filename="scope"):
 
 def testTodayWeather(city, tc):
     """Execute a test on a city's weather based on the parameters in the tc"""
-    for name in tc:
-        print("Running Test Case:",(name).title())
-        testName = (name).title()
-        testValue = tc[name]["test value"]
-        threshold = tc[name]["fail threshold"]
-        comparison = tc[name]["fail comparison"]
-        testThresholdType = tc[name]["threshold type"] if "threshold type" in tc[name] else ""
-
+    # Send the test call and store the response for evaluation
+    results = {}
+    results[city] = {}
+    results[city]["testing"] = {}
     testResponse = getCityWeather(city)
+    results[city]["response"] = testResponse
+    # Run each test that is present within the tc object
+    print()
+    print("Testing city:",(city).title())
+    for test in tc:
+        testName = (test).title()
+        testValue = tc[test]["test value"]
+        threshold = tc[test]["fail threshold"]
+        comparison = tc[test]["fail comparison"]
+        testThresholdType = tc[test]["threshold type"] if "threshold type" in tc[test] else ""
 
-    actual = getActual(testValue, testResponse)
-    if testThresholdType == "farenheit":
-        convertedTemp = convertTemp(actual)
-        actual = convertedTemp[testThresholdType]
+        actual = getActual(testValue, testResponse)
 
-    print("Testing "+city+" | "+testName+"?")
-    result = testCompare(actual, comparison, threshold)
-    if result == "Pass":
-        print("<PASS>",actual,"is not",comparison,threshold,testThresholdType)
-    if result == "Fail":
-        print("<FAIL>",actual,"is",comparison,threshold,testThresholdType)
-    # Store the test results for later reference
-    results = {
-        city: {
+        # Temperature testing needs to be converted from kelvin
+        if testThresholdType in ["farenheit", "celsius"]:
+            convertedTemp = convertTemp(actual)
+            actual = convertedTemp[testThresholdType]
+
+        # Test the actual against the tc criteria
+        print()
+        print(".....testing: "+testName+"?")
+        result = testCompare(actual, comparison, threshold)
+        print("< "+result+" >",actual,"compared to",comparison,threshold,testThresholdType)
+        
+        # Store the test results for later reference
+        results[city]["testing"][test] = {
             "result": result,
             "time": datetime.today().strftime('%Y-%m-%d-%H%M%S'),
-            "testcase": tc,
+            "testcase": tc[test],
             "actual": {
-                "tested value": actual,
-                "response": testResponse
+                "tested value": actual
             }
         }
-    }
-    # Save the test results as a local log file
-    saveLog(results, city+"-"+testName)
+        # Save the test results as a local log file
+        # saveLog(results, city+"-"+testName)
+    saveLog(results, city)
 
-def saveLog(saveStuff, filenameAppend=""):
+def saveLog(saveStuff, organize=""):
     """Save saveStuff as a file in the local folder "logs" as a .json file"""
     time = datetime.today().strftime('-%Y-%m-%d-%H%M%S')
-    # String cleanup if we are adding stuff to the end of the filename
+    subfolder = organize
+    filenameAppend = organize
+    # If we are adding to the end of the filename
     if filenameAppend != "":
         filenameAppend = "-"+filenameAppend
         filenameAppend = filenameAppend.replace(" ","_")
-    with open("logs/results"+time+filenameAppend+".json", "w") as outfile:
+    # If we are storing in a subfolder
+    if subfolder != "":
+        subfolder = subfolder+"/"
+        os.mkdir("logs/"+subfolder)
+    with open("logs/"+subfolder+"results"+time+filenameAppend+".json", "w") as outfile:
         json.dump(saveStuff, outfile, indent=4)
 
 def testCompare(comparing, comparison, compareto):
@@ -258,9 +270,7 @@ class prompt(cmd.Cmd):
     def do_fullrun(self, arg):
         """Run every testcase on every aspect of the scope"""
         for city in scope["cities"]:
-            for tc in testcases:
-                print("[debug]",testcases[tc])
-                testTodayWeather(city, {tc: testcases[tc]})
+            testTodayWeather(city, testcases)
 
 if __name__ == '__main__':
     running = True
@@ -284,3 +294,4 @@ if __name__ == '__main__':
 # print("[debug]",testcases.keys())
 # TODO: Cycle through cities based on the local scope.json file
 # TODO: Save function should be flexible for bulk running to create subfolders...city/testcase/datetime ?
+# TODO: Remove coordinate lookup function (its hella slow) and replace it by assigning coordinates to cities in scope.json
