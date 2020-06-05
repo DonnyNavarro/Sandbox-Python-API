@@ -149,11 +149,11 @@ def testTodayWeather(city, tc):
         # saveLog(results, city+"-"+testName)
     saveLog(results, city)
 
-def saveLog(saveStuff, organize=""):
+def saveLog(saveStuff, tag=""):
     """Save saveStuff as a file in the local folder "logs" as a .json file"""
     time = datetime.today().strftime('-%Y-%m-%d-%H%M%S')
-    subfolder = organize
-    filenameAppend = organize
+    subfolder = tag
+    filenameAppend = tag
     # If we are adding to the end of the filename
     if filenameAppend != "":
         filenameAppend = "-"+filenameAppend
