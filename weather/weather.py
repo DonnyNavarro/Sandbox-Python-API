@@ -84,6 +84,12 @@ def getNextTestcase(tcs):
     for tc in tcs:
         return {tc: tcs.pop(tc)}
 
+def getScope(filename="scope"):
+    """Return scope as an object based on a local JSON file"""
+    with open(filename+".json") as scope:
+        # Return the scope file as a python dictionary
+        return json.load(scope)
+
 def testTodayWeather(city, tc):
     """Execute a test on a city's weather based on the parameters in the tc"""
     for name in tc:
@@ -158,64 +164,98 @@ class prompt(cmd.Cmd):
         """Close the program"""
         quit()
 
-    def do_reload(self, arg):
-        """Reload the testcase queue from scratch"""
-        return True
+    """The following functions are an attempt to create a queuing system, but needs to be improved"""
+    # def do_reload(self, arg):
+    #     """Reload the testcase queue from scratch"""
+    #     return True
 
-    def do_load(self, arg):
-        """Load a specific testcase to be run next, specified as an argument"""
-        global nextTestCase
-        nextTestCase = tcsToRun[arg]
-        print("Next TC to run:",{arg: nextTestCase})
+    # def do_load(self, arg):
+    #     """Load a specific testcase to be run next, specified as an argument"""
+    #     global nextTestCase
+    #     nextTestCase = tcsToRun[arg]
+    #     print("Next TC to run:",{arg: nextTestCase})
 
-    def do_loadnext(self, arg):
-        """Load the next testcase so that it is ready to be run"""
-        # Grab a tc from tcToRun and queue it up
-        global nextTestCase
-        nextTestCase = getNextTestcase(tcsToRun)
+    # def do_loadnext(self, arg):
+    #     """Load the next testcase so that it is ready to be run"""
+    #     # Grab a tc from tcToRun and queue it up
+    #     global nextTestCase
+    #     nextTestCase = getNextTestcase(tcsToRun)
 
-    def do_next(self, arg):
-        """Display the testcase that is current loaded to be run"""
-        print("Next TC to run:",nextTestCase)
+    # def do_next(self, arg):
+    #     """Display the testcase that is current loaded to be run"""
+    #     print("Next TC to run:",nextTestCase)
 
-    def do_pending(self, arg):
-        """Display the testcases that are still waiting to be run"""
-        print("TCs still pending:",tcsToRun)
+    # def do_pending(self, arg):
+    #     """Display the testcases that are still waiting to be run"""
+    #     print("TCs still pending:",tcsToRun)
 
-    def do_testnext(self, arg):
-        """Run the next testcase. You can display what TC this will be with the <next> command"""
-        testTodayWeather(nextTestCase)
+    # def do_testnext(self, arg):
+    #     """Run the next testcase. You can display what TC this will be with the <next> command"""
+    #     testTodayWeather(nextTestCase)
+
+    def do_list(self, arg):
+        """Display a list of testcases available"""
+        print("Available Testcases:")
+        for tc in testcases:
+            print(" ",(tc).title())
 
     def do_test(self, arg):
         """Run a specfic testcase immediately, specified as an argument"""
         if not city:
-            print("ERROR: Use the <city> command to specify a city!")
+            print("ERROR: Use the <city> command to specify a city before using this command!")
         else:
             if arg in testcases:
                 testTodayWeather(city, {arg: testcases[arg]})     
             else:
-                print("ERROR: Please specify which testcase to test!")
+                print("ERROR: Please specify which testcase to test as an argument!")
+                print("  (View a list of available testcases with the <list> command.)")
 
     def do_try(self, arg):
         """Send a request for today's weather to a city, specified as an argument"""
-        getCityWeather(arg)
+        # TODO: Should this command also save the city used for future use?
+        if not arg:
+            if not city:
+                print("ERROR: Either specify a city as an argument or use the <city> command to do so.")
+            else:
+                getCityWeather(city)
+        else:
+            getCityWeather(arg)
 
     def do_city(self, arg):
+        """Saves a city name as the city to be used in tests"""
         if arg:
             global city
             city = (arg).title()
+        else:
+            if not city:
+                print("ERROR: Please specify a city name when using this command.")
+            else:
+                print("Current city target:",city)
+                print("  (Use this command with an argument to set that argument as the new city target.)")
+
+    def do_fullrun(self, arg):
+        """Run every testcase on every aspect of the scope"""
+        for city in scope["cities"]:
+            for tc in testcases:
+                print("[debug]",testcases[tc])
+                testTodayWeather(city, {tc: testcases[tc]})
 
 if __name__ == '__main__':
     running = True
     apikey = os.getenv("APIKEY_OPENWEATHERMAP")
     columnwidth = 15
     global city
+    city = ""
 
     while running == True:
-        testcases = getTestcases() # Load a dictionary of testcases
+        # Load the test cases we want available
+        testcases = getTestcases("testcases") # Load a dictionary of testcases
         tcsToRun = testcases # Create a dictionary of testcases, to have tcs removed as they are run
         nextTestCase = {}
         displayTestcases(testcases)
+        # Load the scope we want available
+        scope = getScope("scope")
+        # COMMAND LINE PROMPT
         prompt().cmdloop()
 
 # TODO: Consider whether it is better to track our todo list as a dictionary with full tc details or to just make a list of the keys
