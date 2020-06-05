@@ -1,7 +1,7 @@
 import requests
 import json
 import cmd
-import reverse_geocode
+import reverse_geocoder
 import pytemperature
 from datetime import datetime
 
@@ -36,7 +36,16 @@ def sendRequest(url):
     print()
     print("Request response received:")
     print(responsePrint)
+
+    displayLocation((response["coord"]["lat"], response["coord"]["lon"]))
     return response
+
+def displayLocation(coords):
+    """Looks up coords and finds more detailed location data to verify what place it is precisely"""
+    print("Referencing third party for details on coordinates location:")
+    locationDetails = reverse_geocoder.search(coords)
+    print("     City:",locationDetails[0]["name"]+" ("+locationDetails[0]["admin2"]+")")
+    print("  Country:",locationDetails[0]["admin1"]+", "+locationDetails[0]["cc"])
 
 def sanitize(arg, argType):
     """Sanitize variables for use in URLs"""
@@ -98,17 +107,21 @@ def testTodayWeather(city, tc):
         testValue = tc[name]["test value"]
         threshold = tc[name]["fail threshold"]
         comparison = tc[name]["fail comparison"]
-        testThresholdType = tc[name]["threshold type"] if "threshold type" in tc[name] else False
+        testThresholdType = tc[name]["threshold type"] if "threshold type" in tc[name] else ""
 
     testResponse = getCityWeather(city)
 
     actual = getActual(testValue, testResponse)
-    if testThresholdType:
+    if testThresholdType == "farenheit":
         convertedTemp = convertTemp(actual)
         actual = convertedTemp[testThresholdType]
 
     print("Testing "+city+" | "+testName+"?")
     result = testCompare(actual, comparison, threshold)
+    if result == "Pass":
+        print("<PASS>",actual,"is",comparison,threshold,testThresholdType)
+    if result == "Fail":
+        print("<FAIL>",actual,"is",comparison,threshold,testThresholdType)
     # Store the test results for later reference
     results = {city: {
         "result": result,
@@ -132,10 +145,8 @@ def saveLog(saveStuff, filenameAppend=""):
 def testCompare(comparing, comparison, compareto):
     # Compare the actuals to the thresholds using the comparison operator
     if ops[comparison](comparing,compareto):
-        print("<FAIL>",comparing,"is",comparison,compareto)
         return "Fail"
     else:
-        print("<PASS>",comparing,"is not",comparison,compareto)
         return "Pass"
     
 def getActual(field, response):
@@ -261,12 +272,4 @@ if __name__ == '__main__':
 # TODO: Consider whether it is better to track our todo list as a dictionary with full tc details or to just make a list of the keys
 # print("[debug]",testcases.keys())
 # TODO: Cycle through cities based on the local scope.json file
-
-# # Examples and testing
-# testCoords = (37.22, -93.3)
-# # getCoordWeather(testCoords)
-
-# test = getCityWeather("Tallahassee")
-# print("Location"+"."*(columnwidth-len("Location"))+test["name"])
-# displayTemps(test)
-
+# TODO: Save function should be flexible for bulk running to create subfolders...city/testcase/datetime ?

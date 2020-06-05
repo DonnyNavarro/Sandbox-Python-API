@@ -19,6 +19,7 @@
     "too windy": {
         "test value": "wind speed",
         "fail threshold": 2.0,
-        "fail comparison": ">"
+        "fail comparison": ">",
+        "threshold type": "meters per second"
     }
 }
