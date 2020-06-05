@@ -2,19 +2,23 @@
     "too hot": {
         "test value": "temp",
         "fail threshold": 70,
+        "fail comparison": ">",
         "threshold type": "farenheit"
     },
     "too cold": {
         "test value": "temp",
         "fail threshold": 50,
+        "fail comparison": "<",
         "threshold type": "farenheit"
     },
     "too humid": {
         "test value": "humidity",
-        "fail threshold": 40
+        "fail threshold": 40,
+        "fail comparison": ">"
     },
     "too windy": {
         "test value": "wind speed",
-        "fail threshold": 2.0
+        "fail threshold": 2.0,
+        "fail comparison": ">"
     }
 }
