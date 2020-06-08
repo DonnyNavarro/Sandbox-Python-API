@@ -195,8 +195,8 @@ class prompt(cmd.Cmd):
             return False
         # All arg means test everything in testcases.json on all cities in scope.json
         if arg == "all":
-            for city in scope["cities"]:
-                testTodayWeather(city, testcases)
+            for place in scope["cities"]:
+                testTodayWeather(place, testcases)
             return False
         # Test a single testcase on a single city
         # 1. Check city was selected
@@ -228,7 +228,7 @@ class prompt(cmd.Cmd):
 
     def do_city(self, arg):
         """Designates which cities to test. Multiple cities can be given in a comma separated list."""
-        global city
+        global city, scope
         # If there wasn't an arg then display the currently active city
         if not arg:
             if not city:
@@ -238,20 +238,43 @@ class prompt(cmd.Cmd):
             return False
 
         # Convert the arg to a list
+        city = []
         arg = arg.title() # make pretty
         arg = arg.split(",") # each space indicates something to treat as a new list item
         arg = [arg] if type(arg) == str else arg # if only one item is presented, make it a list so type handling is uniform
         for key, val in enumerate(arg):
             arg[key] = val.strip()
-        if arg:
-            city = arg
-            print("City queue:",city)
+            if arg[key] in scope["cities"]:
+                city.append(arg[key])
+            else:
+                print("ERROR:",arg[key],"is not among the cities in our scope.")
+        print("City Queue:",city)
         
+    def do_tc(self, arg):
+        """Queue up testcases to be run. Adding new tcs will clear the previous queue. Tcs may be submitted as a comma separated list."""
+        global testQueue
+        if not arg:
+            print("Testcase Queue:",testQueue) if testQueue else print("Testcase Queue is empty")
+            return False
+
+        testQueue = [] # Start fresh
+        arg = arg.split(",") # each space indicates something to treat as a new list item
+        arg = [arg] if type(arg) == str else arg # if only one item is presented, make it a list so type handling is uniform
+        for key, val in enumerate(arg):
+            arg[key] = val.strip()
+            if arg[key] in testcases:
+                testQueue.append(arg[key])
+            else:
+                print("ERROR:",arg[key],"is not among the available testcases.")
+        print("Testcase Queue:",testQueue)
+        return False
+
 if __name__ == '__main__':
     running = True
     apikey = os.getenv("APIKEY_OPENWEATHERMAP")
     columnwidth = 15
     city = ""
+    testQueue = []
 
     """Runtime loop"""
     # Splash Intro Screen
