@@ -25,27 +25,24 @@ project_folder = os.path.expanduser('') # local path
 load_dotenv(os.path.join(project_folder, '.env'))
 
 def sendRequest(url):
-    """Hit the url with a GET request and display the response"""
-    # Get today's weather for city, state
+    """Hit the url with a GET request, display the response, and return it as a dict"""
+    # Send GET request to the url
     print()
     print("Sending GET request to")
     print(url)
     response = requests.get(url).json()
-    responsePrint = json.dumps(response, indent=4)
-    # Display today's weather for city, state
+    # Display the request response
     print()
     print("Request response received:")
-    print(responsePrint)
-
-    location = displayLocation((response["coord"]["lat"], response["coord"]["lon"]))
-    response["location"] = location
+    displayDict(response)
     return response
 
 def displayLocation(coords):
     """Looks up coords and finds more detailed location data to verify what place it is precisely"""
     print("Referencing third party for details on coordinates location:")
     locationDetails = reverse_geocoder.search(coords)
-    print("     City:",locationDetails[0]["name"]+" ("+locationDetails[0]["admin2"]+")")
+    city2 = "("+locationDetails[0]["admin2"]+")" if locationDetails[0]["admin2"] else ""
+    print("     City:",locationDetails[0]["name"],city2)
     print("  Country:",locationDetails[0]["admin1"]+", "+locationDetails[0]["cc"])
     location = {
         "city": locationDetails[0]["name"]+" ("+locationDetails[0]["admin2"]+")",
@@ -64,23 +61,24 @@ def sanitize(arg, argType):
         return ","+arg if arg != "" else ""
 
 def getCityWeather(city, state=""):
-    """Get today's weather for a given city. State is optional, but if given then it needs to be a full name and not initials"""
+    """Get today's weather for a given city. State is optional, but if given then it needs to be a full name and not initials.
+    Return a dict with the weather api response as well as location confirmation data."""
     # Today's weather API URL
     city = sanitize(city, "city")
     state = sanitize(state, "state")
     cityWeather = sendRequest('https://api.openweathermap.org/data/2.5/weather?q='+city+state+'&appid='+apikey)
+    location = displayLocation((cityWeather["coord"]["lat"], cityWeather["coord"]["lon"]))
+    cityWeather["location"] = location
     return cityWeather
 
-def convertTemp(kelvin):
-    """Convert kelvin into a dictionary with both farenheit and celsius"""
-    celsius = round(pytemperature.k2c(kelvin), 2) # Kelvin to Celsius
-    farenheit = round(pytemperature.k2f(kelvin), 2) # Kelvin to Fahrenheit
-
-    converted = {
-        "celsius": celsius,
-        "farenheit": farenheit
-    }
-    return converted
+def convertTemp(kelvin, scale):
+    """Convert kelvin numbers into another temperature scale"""
+    if scale == "celsius":
+        return round(pytemperature.k2c(kelvin), 2)
+    elif scale == "farenheit":
+        return round(pytemperature.k2f(kelvin), 2)
+    else:
+        return False
 
 def getTestcases(filename="testcases"):
     """Return testcases as a dict based on a local filename.json"""
@@ -124,9 +122,7 @@ def testTodayWeather(city, tc):
         actual = getActual(testValue, testResponse)
 
         # Temperature testing needs to be converted from kelvin
-        if testThresholdType in ["farenheit", "celsius"]:
-            convertedTemp = convertTemp(actual)
-            actual = convertedTemp[testThresholdType]
+        actual = convertTemp(actual, testThresholdType) if testThresholdType in ["farenheit", "celsius"]: else actual
 
         # Test the actual against the tc criteria
         print()
@@ -274,7 +270,6 @@ if __name__ == '__main__':
     running = True
     apikey = os.getenv("APIKEY_OPENWEATHERMAP")
     columnwidth = 15
-    global city
     city = ""
 
     while running == True:
