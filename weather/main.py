@@ -168,6 +168,12 @@ def saveLog(saveStuff, tag=""):
     with open("logs/"+subfolder+"results"+time+filenameAppend+".json", "w") as outfile:
         json.dump(saveStuff, outfile, indent=4)
 
+def confirmPrompt():
+    """Returns True only if the user responds to the prompt in the affirmative"""
+    confirm = input("\nAccept? y/[n] ")
+    if (confirm).lower() in ["y", "yes"]:
+        return True
+
 class prompt(cmd.Cmd):
     """Command line input prompt"""
     prompt = "\n (Type <help> to see available commands)\n: "
@@ -187,25 +193,60 @@ class prompt(cmd.Cmd):
 
     def do_test(self, arg):
         """Run a specfic testcase immediately, specified as an argument. Use the 'all' arg to run the entire testcase.json on the entire scope.json """
-        global city
-        # All arg means test everything in testcases.json on all cities in scope.json
-        if arg == "all":
-            for place in scope["cities"]:
-                testTodayWeather(place, testcases)
-            return False
 
-        # Test a selection of tcs and cities
-        # 1. Check city queue
-        # 2. Check tc queue
-        if not city or not testQueue:
-            if not city:
-                print("ERROR: Use the <city> command to queue up cities before using this command!")
-            if not testQueue:
-                print("ERROR: Use the <tc> command to queue up testcases before using this command!")
-            return False
+        # SELECT CITIES
+        cityQueue = []
+        while not cityQueue:
+            print()
+            print("Cities Available:")
+            print(scope["cities"])
+            cityChoice = input("\nWhat cities would you like to test? ")
+            cityChoice = cityChoice.title() # make pretty
+            cityChoice = cityChoice.split(",") # each space indicates something to treat as a new list item
+            cityChoice = [cityChoice] if type(cityChoice) == str else cityChoice # if only one item is presented, make it a list so type handling is uniform
+            for key, val in enumerate(cityChoice):
+                cityChoice[key] = val.strip()
+                if cityChoice[key] in scope["cities"]:
+                    cityQueue.append(cityChoice[key])
+                else:
+                    print("ERROR:",cityChoice[key],"is not among the cities in our scope.")
+            if cityQueue:
+                print("City Queue:",cityQueue)
+                cityQueue = [] if not confirmPrompt() else cityQueue
 
+        # SELECT TEST CASES
+        testQueue = []
+        while not testQueue:
+            print()
+            print("Testcases Available:")
+            displayDict(testcases)
+            testChoice = input("What testcases would you like to test? ")
+            testChoice = testChoice.split(",") # each space indicates something to treat as a new list item
+            testChoice = [testChoice] if type(testChoice) == str else testChoice # if only one item is presented, make it a list so type handling is uniform
+            for key, val in enumerate(testChoice):
+                testChoice[key] = val.strip()
+                if testChoice[key] in testcases:
+                    testQueue.append(testChoice[key])
+                else:
+                    print("ERROR:",testChoice[key],"is not among the available testcases.")
+            if testQueue:
+                print("Testcase Queue:",testQueue)
+                testQueue = [] if not confirmPrompt() else testQueue
+        
+        # One last check before we begin the run
+        confirm = False
+        while not confirm:
+            print("Ready to begin testing!")
+            confirm = confirmPrompt()
+            # Give an option to end this and go back to main menu
+            if not confirm:
+                cancelCheck = input("No? Type cancel or back or something to go back to the main menu ")
+                if cancelCheck in ["cancel", "back", "quit"]:
+                    return True
+
+        # RUN SELECTED TEST CASES AGAINST SELECTED CITIES
         collectedTcs = {}
-        for place in city:
+        for place in cityQueue:
             for tc in testQueue:
                 # Collect the tcs to test so they can all be run in a single city data request
                 collectedTcs[tc] = testcases[tc]
