@@ -75,15 +75,6 @@ def getCityWeather(city, state=""):
     cityWeather["location"] = location
     return cityWeather
 
-def convertTemp(kelvin, scale, rounding=2):
-    """Convert kelvin numbers into another temperature scale and round the result to a number of decimal places."""
-    if scale == "celsius":
-        return round(pytemperature.k2c(kelvin), rounding)
-    elif scale == "farenheit":
-        return round(pytemperature.k2f(kelvin), rounding)
-    else:
-        return False
-
 def loadJson(filename):
     """Load a local JSON file and return it as a dict"""
     with open(filename+".json") as dictionary:
