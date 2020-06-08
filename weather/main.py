@@ -41,7 +41,7 @@ def sendRequest(url):
     print("Sending GET request to")
     print(url)
     response = requests.get(url)
-    
+
     # Validate that the request succeeded
     if response.status_code != 200:
         print("Request failed: Status code",response.status_code)
@@ -65,13 +65,13 @@ def getCityWeather(city, state=""):
     cityWeather = sendRequest('https://api.openweathermap.org/data/2.5/weather?q='+city+state+'&appid='+apikey)
     if cityWeather:
         # Grab the coordinates from the response, so we can verify they are the location we were hoping to get from the city we named
-        location = displayLocation((cityWeather["coord"]["lat"], cityWeather["coord"]["lon"]))
+        location = matchLocation((cityWeather["coord"]["lat"], cityWeather["coord"]["lon"]))
         cityWeather["location"] = location
         return cityWeather
     else:
         return False
 
-def displayLocation(coords):
+def matchLocation(coords):
     """Looks up coords and uses an api request to print and return detailed location data"""
     # Get location data for the coords from an api
     print("Referencing third party for details on coordinates location:")
@@ -186,13 +186,28 @@ class prompt(cmd.Cmd):
             print(" ",(tc).title())
 
     def do_test(self, arg):
-        """Run a specfic testcase immediately, specified as an argument"""
+        """Run a specfic testcase immediately, specified as an argument. Use the 'all' arg to run the entire testcase.json on the entire scope.json """
+        global city
+        # No arg means just display the options
         if not arg:
             print("Testcases Available:")
             displayDict(testcases)
-        print()
-        print("City to test:",city) if city else print("ERROR: Use the <city> command to specify a city before using this command!")
-        if arg in testcases and city:
+            return False
+        # Test everything in testcases.json on all cities in scope.json
+        if arg == "all":
+            for city in scope["cities"]:
+                testTodayWeather(city, testcases)
+            return False
+        # Test a single testcase on a single city
+        # 1. Check city was selected
+        # 2. Check tc selected is valid
+        if city:
+            print()
+            print("City to test:",city)
+        else:
+            print("ERROR: Use the <city> command to specify a city before using this command!")
+            return False
+        if arg in testcases:
             testTodayWeather(city, {arg: testcases[arg]})     
         else:
             print("ERROR: Please specify which testcase to test as an argument!")
@@ -221,11 +236,6 @@ class prompt(cmd.Cmd):
             else:
                 print("City to be tested:",city)
 
-    def do_fullrun(self, arg):
-        """Run every testcase on every aspect of the scope"""
-        for city in scope["cities"]:
-            testTodayWeather(city, testcases)
-
 if __name__ == '__main__':
     running = True
     apikey = os.getenv("APIKEY_OPENWEATHERMAP")
@@ -252,6 +262,4 @@ if __name__ == '__main__':
         # COMMAND LINE PROMPT
         prompt().cmdloop()
 
-# TODO: Cycle through cities based on the local scope.json file
-# TODO: Save function should be flexible for bulk running to create subfolders...city/testcase/datetime ?
 # TODO: Remove coordinate lookup function (its hella slow) and replace it by assigning coordinates to cities in scope.json
