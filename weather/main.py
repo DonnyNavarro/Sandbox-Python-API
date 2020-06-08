@@ -191,6 +191,19 @@ class prompt(cmd.Cmd):
         for tc in testcases:
             print(" ",(tc).title())
 
+    def do_try(self, arg):
+        """Send a request for today's weather to a city, specified as an argument. Basically a dry run for pretesting."""
+        global city
+        if not arg:
+            if not city:
+                print("ERROR: Either specify a city as an argument or use the <city> command to prepare one.")
+            else:
+                getCityWeather(city)
+        else:
+            getCityWeather(arg)
+        # Save the city used and keep it active
+        city = (arg).title() if arg else city
+
     def do_test(self, arg):
         """Run a specfic testcase immediately, specified as an argument. Use the 'all' arg to run the entire testcase.json on the entire scope.json """
 
@@ -203,7 +216,11 @@ class prompt(cmd.Cmd):
             cityChoice = input("\nWhat cities would you like to test? ")
             cityChoice = cityChoice.title() # make pretty
             cityChoice = cityChoice.split(",") # each space indicates something to treat as a new list item
-            cityChoice = [cityChoice] if type(cityChoice) == str else cityChoice # if only one item is presented, make it a list so type handling is uniform
+            # allow all as an easy option
+            if cityChoice == ["All"]:
+                cityChoice = scope["cities"]
+            # if only one item is presented, make it a list so 
+            cityChoice = [cityChoice] if type(cityChoice) == str else cityChoice type handling is uniform
             for key, val in enumerate(cityChoice):
                 cityChoice[key] = val.strip()
                 if cityChoice[key] in scope["cities"]:
@@ -222,7 +239,11 @@ class prompt(cmd.Cmd):
             displayDict(testcases)
             testChoice = input("What testcases would you like to test? ")
             testChoice = testChoice.split(",") # each space indicates something to treat as a new list item
-            testChoice = [testChoice] if type(testChoice) == str else testChoice # if only one item is presented, make it a list so type handling is uniform
+            # allow all as an easy option
+            if testChoice == ["all"]:
+                testChoice = [*testcases]
+            # if only one item is presented, make it a list so type handling is uniform
+            testChoice = [testChoice] if type(testChoice) == str else testChoice
             for key, val in enumerate(testChoice):
                 testChoice[key] = val.strip()
                 if testChoice[key] in testcases:
@@ -251,62 +272,6 @@ class prompt(cmd.Cmd):
                 # Collect the tcs to test so they can all be run in a single city data request
                 collectedTcs[tc] = testcases[tc]
             testTodayWeather(place, collectedTcs)
-
-    def do_try(self, arg):
-        """Send a request for today's weather to a city, specified as an argument. Basically a dry run for pretesting."""
-        global city
-        if not arg:
-            if not city:
-                print("ERROR: Either specify a city as an argument or use the <city> command to prepare one.")
-            else:
-                getCityWeather(city)
-        else:
-            getCityWeather(arg)
-        # Save the city used and keep it active
-        city = (arg).title() if arg else city
-
-    def do_city(self, arg):
-        """Designates which cities to test. Multiple cities can be given in a comma separated list."""
-        global city, scope
-        # If there wasn't an arg then display the currently active city
-        if not arg:
-            if not city:
-                print("ERROR: No city currently selected. Please specify a city name when using this command.")
-            else:
-                print("City queue:",city)
-            return False
-
-        # Convert the arg to a list
-        city = []
-        arg = arg.title() # make pretty
-        arg = arg.split(",") # each space indicates something to treat as a new list item
-        arg = [arg] if type(arg) == str else arg # if only one item is presented, make it a list so type handling is uniform
-        for key, val in enumerate(arg):
-            arg[key] = val.strip()
-            if arg[key] in scope["cities"]:
-                city.append(arg[key])
-            else:
-                print("ERROR:",arg[key],"is not among the cities in our scope.")
-        print("City Queue:",city)
-        
-    def do_tc(self, arg):
-        """Queue up testcases to be run. Adding new tcs will clear the previous queue. Tcs may be submitted as a comma separated list."""
-        global testQueue
-        if not arg:
-            print("Testcase Queue:",testQueue) if testQueue else print("Testcase Queue is empty")
-            return False
-
-        testQueue = [] # Start fresh
-        arg = arg.split(",") # each space indicates something to treat as a new list item
-        arg = [arg] if type(arg) == str else arg # if only one item is presented, make it a list so type handling is uniform
-        for key, val in enumerate(arg):
-            arg[key] = val.strip()
-            if arg[key] in testcases:
-                testQueue.append(arg[key])
-            else:
-                print("ERROR:",arg[key],"is not among the available testcases.")
-        print("Testcase Queue:",testQueue)
-        return False
 
 if __name__ == '__main__':
     running = True
