@@ -71,12 +71,12 @@ def getCityWeather(city, state=""):
     cityWeather["location"] = location
     return cityWeather
 
-def convertTemp(kelvin, scale):
-    """Convert kelvin numbers into another temperature scale"""
+def convertTemp(kelvin, scale, rounding=2):
+    """Convert kelvin numbers into another temperature scale and round the result to a number of decimal places."""
     if scale == "celsius":
-        return round(pytemperature.k2c(kelvin), 2)
+        return round(pytemperature.k2c(kelvin), rounding)
     elif scale == "farenheit":
-        return round(pytemperature.k2f(kelvin), 2)
+        return round(pytemperature.k2f(kelvin), rounding)
     else:
         return False
 
