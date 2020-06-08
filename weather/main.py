@@ -193,7 +193,7 @@ class prompt(cmd.Cmd):
             print("Testcases Available:")
             displayDict(testcases)
             return False
-        # Test everything in testcases.json on all cities in scope.json
+        # All arg means test everything in testcases.json on all cities in scope.json
         if arg == "all":
             for city in scope["cities"]:
                 testTodayWeather(city, testcases)
@@ -208,7 +208,8 @@ class prompt(cmd.Cmd):
             print("ERROR: Use the <city> command to specify a city before using this command!")
             return False
         if arg in testcases:
-            testTodayWeather(city, {arg: testcases[arg]})     
+            for place in city:
+                testTodayWeather(place, {arg: testcases[arg]})     
         else:
             print("ERROR: Please specify which testcase to test as an argument!")
 
@@ -227,14 +228,25 @@ class prompt(cmd.Cmd):
 
     def do_city(self, arg):
         """Saves a city name as the city to be used in tests"""
-        if arg:
-            global city
-            city = (arg).title()
-        else:
+        global city
+        # If there wasn't an arg then display the currently active city
+        if not arg:
             if not city:
                 print("ERROR: No city currently selected. Please specify a city name when using this command.")
             else:
-                print("City to be tested:",city)
+                print("City queue:",city)
+            return False
+
+        # Convert the arg to a list
+        arg = arg.title() # make pretty
+        arg = arg.split(",") # each space indicates something to treat as a new list item
+        arg = [arg] if type(arg) == str else arg # if only one item is presented, make it a list so type handling is uniform
+        for key, val in enumerate(arg):
+            arg[key] = val.strip()
+        if arg:
+            city = arg
+            print("City queue:",city)
+        
 
 if __name__ == '__main__':
     running = True
