@@ -227,7 +227,7 @@ class prompt(cmd.Cmd):
         city = (arg).title() if arg else city
 
     def do_city(self, arg):
-        """Saves a city name as the city to be used in tests"""
+        """Designates which cities to test. Multiple cities can be given in a comma separated list."""
         global city
         # If there wasn't an arg then display the currently active city
         if not arg:
@@ -247,7 +247,6 @@ class prompt(cmd.Cmd):
             city = arg
             print("City queue:",city)
         
-
 if __name__ == '__main__':
     running = True
     apikey = os.getenv("APIKEY_OPENWEATHERMAP")
