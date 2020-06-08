@@ -31,12 +31,19 @@ def sendRequest(url):
     print()
     print("Sending GET request to")
     print(url)
-    response = requests.get(url).json()
+    response = requests.get(url)
+    print("Request failed: Status code",response.status_code)
+    # Validate that the request succeeded
+    if response.status_code != 200:
+        print("Request failed: Status code",response.status_code)
+        return False
+    # Convert the response from JSON to dict
+    responseJson = (response).json()
     # Display the request response
     print()
     print("Request response received:")
-    displayDict(response)
-    return response
+    displayDict(responseJson)
+    return responseJson
 
 def displayLocation(coords):
     """Looks up coords and uses an api request to print and return detailed location data"""
@@ -55,23 +62,15 @@ def displayLocation(coords):
     }
     return location
 
-def sanitize(arg, argType):
-    """Sanitize variables for use in URLs"""
-    #   Cities with spaces in their names
-    #   States are optional
-    if argType == "city":
-        return arg.replace(" ", "+")
-
-    if argType == "state":
-        return ","+arg if arg != "" else ""
-
 def getCityWeather(city, state=""):
     """Get today's weather for a given city. State is optional, but if given then it needs to be a full name and not initials.
     Return a dict with the weather api response as well as location confirmation data."""
-    # Today's weather API URL
-    city = sanitize(city, "city")
-    state = sanitize(state, "state")
+    # String requirements for city and state to be used in the api url
+    city = city.replace(" ", "+")
+    state = ","+state if state != "" else ""
+    # Send the request
     cityWeather = sendRequest('https://api.openweathermap.org/data/2.5/weather?q='+city+state+'&appid='+apikey)
+    # Grab the coordinates from the response, so we can verify they are the location we were hoping to get from the city we named
     location = displayLocation((cityWeather["coord"]["lat"], cityWeather["coord"]["lon"]))
     cityWeather["location"] = location
     return cityWeather
@@ -114,8 +113,12 @@ def testTodayWeather(city, tc):
 
         actual = getActual(testValue, testResponse)
 
-        # Temperature testing needs to be converted from kelvin
-        actual = convertTemp(actual, testThresholdType) if testThresholdType in ["farenheit", "celsius"] else actual
+        # Temperature testing needs to convert kelvin to human 
+        if testThresholdType in ["farenheit", "celsius"] :
+            if testThresholdType == "celsius":
+                actual = round(pytemperature.k2c(actual), 2)
+            elif testThresholdType == "farenheit":
+                actual = round(pytemperature.k2f(actual), 2)
 
         # Test the actual against the tc criteria
         print()
@@ -200,15 +203,17 @@ class prompt(cmd.Cmd):
             print("ERROR: Please specify which testcase to test as an argument!")
 
     def do_try(self, arg):
-        """Send a request for today's weather to a city, specified as an argument"""
-        # TODO: Should this command also save the city used for future use?
+        """Send a request for today's weather to a city, specified as an argument. Basically a dry run for pretesting."""
+        global city
         if not arg:
             if not city:
-                print("ERROR: Either specify a city as an argument or use the <city> command to do so.")
+                print("ERROR: Either specify a city as an argument or use the <city> command to prepare one.")
             else:
                 getCityWeather(city)
         else:
             getCityWeather(arg)
+        # Save the city used and keep it active
+        city = (arg).title() if arg else city
 
     def do_city(self, arg):
         """Saves a city name as the city to be used in tests"""
@@ -217,10 +222,9 @@ class prompt(cmd.Cmd):
             city = (arg).title()
         else:
             if not city:
-                print("ERROR: Please specify a city name when using this command.")
+                print("ERROR: No city currently selected. Please specify a city name when using this command.")
             else:
-                print("Current city target:",city)
-                print("  (Use this command with an argument to set that argument as the new city target.)")
+                print("City to be tested:",city)
 
     def do_fullrun(self, arg):
         """Run every testcase on every aspect of the scope"""
@@ -233,10 +237,10 @@ if __name__ == '__main__':
     columnwidth = 15
     city = ""
 
+    """Runtime loop"""
+    # Splash Intro Screen
+    print("Welcome to the weather tester")
     while running == True:
-        """Runtime loop"""
-        # Splash Intro Screen
-        print("Welcome to the weather tester")
 
         # Testcases: load local json into dict and display it to the user
         print()
