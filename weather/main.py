@@ -188,30 +188,28 @@ class prompt(cmd.Cmd):
     def do_test(self, arg):
         """Run a specfic testcase immediately, specified as an argument. Use the 'all' arg to run the entire testcase.json on the entire scope.json """
         global city
-        # No arg means just display the options
-        if not arg:
-            print("Testcases Available:")
-            displayDict(testcases)
-            return False
         # All arg means test everything in testcases.json on all cities in scope.json
         if arg == "all":
             for place in scope["cities"]:
                 testTodayWeather(place, testcases)
             return False
-        # Test a single testcase on a single city
-        # 1. Check city was selected
-        # 2. Check tc selected is valid
-        if city:
-            print()
-            print("City to test:",city)
-        else:
-            print("ERROR: Use the <city> command to specify a city before using this command!")
+
+        # Test a selection of tcs and cities
+        # 1. Check city queue
+        # 2. Check tc queue
+        if not city or not testQueue:
+            if not city:
+                print("ERROR: Use the <city> command to queue up cities before using this command!")
+            if not testQueue:
+                print("ERROR: Use the <tc> command to queue up testcases before using this command!")
             return False
-        if arg in testcases:
-            for place in city:
-                testTodayWeather(place, {arg: testcases[arg]})     
-        else:
-            print("ERROR: Please specify which testcase to test as an argument!")
+
+        collectedTcs = {}
+        for place in city:
+            for tc in testQueue:
+                # Collect the tcs to test so they can all be run in a single city data request
+                collectedTcs[tc] = testcases[tc]
+            testTodayWeather(place, collectedTcs)
 
     def do_try(self, arg):
         """Send a request for today's weather to a city, specified as an argument. Basically a dry run for pretesting."""
@@ -273,7 +271,7 @@ if __name__ == '__main__':
     running = True
     apikey = os.getenv("APIKEY_OPENWEATHERMAP")
     columnwidth = 15
-    city = ""
+    city = []
     testQueue = []
 
     """Runtime loop"""
