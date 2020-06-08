@@ -25,6 +25,15 @@ from dotenv import load_dotenv
 project_folder = os.path.expanduser('') # local path
 load_dotenv(os.path.join(project_folder, '.env'))
 
+def loadJson(filename):
+    """Load a local JSON file and return it as a dict"""
+    with open(filename+".json") as dictionary:
+        return json.load(dictionary)
+
+def displayDict(dic):
+    """Print a dict with pretty indentations"""
+    print(json.dumps(dic, indent=4))
+
 def sendRequest(url):
     """Hit the url with a GET request, display the response, and return it as a dict"""
     # Send GET request to the url
@@ -45,6 +54,19 @@ def sendRequest(url):
     displayDict(responseJson)
     return responseJson
 
+def getCityWeather(city, state=""):
+    """Get today's weather for a given city. State is optional, but if given then it needs to be a full name and not initials.
+    Return a dict with the weather api response as well as location confirmation data."""
+    # String requirements for city and state to be used in the api url
+    city = city.replace(" ", "+")
+    state = ","+state if state != "" else ""
+    # Send the request
+    cityWeather = sendRequest('https://api.openweathermap.org/data/2.5/weather?q='+city+state+'&appid='+apikey)
+    # Grab the coordinates from the response, so we can verify they are the location we were hoping to get from the city we named
+    location = displayLocation((cityWeather["coord"]["lat"], cityWeather["coord"]["lon"]))
+    cityWeather["location"] = location
+    return cityWeather
+
 def displayLocation(coords):
     """Looks up coords and uses an api request to print and return detailed location data"""
     # Get location data for the coords from an api
@@ -61,28 +83,6 @@ def displayLocation(coords):
         "country": locationDetails[0]["admin1"]+", "+locationDetails[0]["cc"]
     }
     return location
-
-def getCityWeather(city, state=""):
-    """Get today's weather for a given city. State is optional, but if given then it needs to be a full name and not initials.
-    Return a dict with the weather api response as well as location confirmation data."""
-    # String requirements for city and state to be used in the api url
-    city = city.replace(" ", "+")
-    state = ","+state if state != "" else ""
-    # Send the request
-    cityWeather = sendRequest('https://api.openweathermap.org/data/2.5/weather?q='+city+state+'&appid='+apikey)
-    # Grab the coordinates from the response, so we can verify they are the location we were hoping to get from the city we named
-    location = displayLocation((cityWeather["coord"]["lat"], cityWeather["coord"]["lon"]))
-    cityWeather["location"] = location
-    return cityWeather
-
-def loadJson(filename):
-    """Load a local JSON file and return it as a dict"""
-    with open(filename+".json") as dictionary:
-        return json.load(dictionary)
-
-def displayDict(dic):
-    """Print a dict with pretty indentations"""
-    print(json.dumps(dic, indent=4))
 
 def testTodayWeather(city, tc):
     """Execute a test on a city's weather based on the parameters in the tc"""
@@ -130,6 +130,22 @@ def testTodayWeather(city, tc):
         # saveLog(results, city+"-"+testName)
     saveLog(results, city)
 
+def getActual(field, response):
+    """Provide the name of a field and response data, and return the value in the data that corresponds to that field"""
+    valueActualMap = {
+        "temp": response["main"]["temp"],
+        "humidity": response["main"]["humidity"],
+        "wind speed": response["wind"]["speed"]
+    }
+    return valueActualMap[field]
+
+def testCompare(actual, comparison, threshold):
+    """Compare the actual to the threshold using the comparison operator. Returns Pass or Fail string"""
+    if ops[comparison](actual,threshold):
+        return "Fail"
+    else:
+        return "Pass"
+    
 def saveLog(saveStuff, tag=""):
     """Save saveStuff as a file in the local folder "logs" as a .json file. If used, tag will append a string to the filename and store the log in a folder named the tag string"""
     time = datetime.today().strftime('-%Y-%m-%d-%H%M%S')
@@ -147,22 +163,6 @@ def saveLog(saveStuff, tag=""):
     # Save the log file
     with open("logs/"+subfolder+"results"+time+filenameAppend+".json", "w") as outfile:
         json.dump(saveStuff, outfile, indent=4)
-
-def testCompare(actual, comparison, threshold):
-    """Compare the actual to the threshold using the comparison operator. Returns Pass or Fail string"""
-    if ops[comparison](actual,threshold):
-        return "Fail"
-    else:
-        return "Pass"
-    
-def getActual(field, response):
-    """Provide the name of a field and response data, and return the value in the data that corresponds to that field"""
-    valueActualMap = {
-        "temp": response["main"]["temp"],
-        "humidity": response["main"]["humidity"],
-        "wind speed": response["wind"]["speed"]
-    }
-    return valueActualMap[field]
 
 class prompt(cmd.Cmd):
     """Command line input prompt"""
