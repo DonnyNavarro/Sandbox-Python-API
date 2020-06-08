@@ -83,16 +83,14 @@ def convertTemp(kelvin):
     return converted
 
 def getTestcases(filename="testcases"):
-    """Return testcases as an object based on a local JSON file"""
+    """Return testcases as a dict based on a local filename.json"""
     with open(filename+".json") as testcases:
         # Return the testcases file as a python dictionary
         return json.load(testcases)
 
-def displayTestcases(tcs):
-    """Display currently readied testcases"""
-    print(" AVAILABLE TEST CASES:")
-    for tc in tcs:
-        print(" - Test Case: \""+(tc).title()+"\" fail if",tcs[tc]["test value"],tcs[tc]["fail comparison"],tcs[tc]["fail threshold"])
+def displayDict(dic):
+    """Print a dict with pretty indentations"""
+    print(json.dumps(dic, indent=4))
 
 def getNextTestcase(tcs):
     """Remove a tc from tcsToRun and return it"""
@@ -284,7 +282,7 @@ if __name__ == '__main__':
         testcases = getTestcases("testcases") # Load a dictionary of testcases
         tcsToRun = testcases # Create a dictionary of testcases, to have tcs removed as they are run
         nextTestCase = {}
-        displayTestcases(testcases)
+        displayDict(testcases)
         # Load the scope we want available
         scope = getScope("scope")
         # COMMAND LINE PROMPT
