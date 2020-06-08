@@ -18,7 +18,7 @@ ops = {
     "!=": operator.ne
 }
 
-"""External ENV file support"""
+"""External ENV file support (API KEY)"""
 #   Then we can store secure environmentals in the .env file, and grab them with os.getenv("varname")
 import os
 from dotenv import load_dotenv
@@ -39,12 +39,16 @@ def sendRequest(url):
     return response
 
 def displayLocation(coords):
-    """Looks up coords and finds more detailed location data to verify what place it is precisely"""
+    """Looks up coords and uses an api request to print and return detailed location data"""
+    # Get location data for the coords from an api
     print("Referencing third party for details on coordinates location:")
     locationDetails = reverse_geocoder.search(coords)
-    city2 = "("+locationDetails[0]["admin2"]+")" if locationDetails[0]["admin2"] else ""
+    # Only display county if it is in the location data
+    city2 = "("+locationDetails[0]["admin2"]+")" if locationDetails[0]["admin2"] else "" 
+    # Print the location data
     print("     City:",locationDetails[0]["name"],city2)
     print("  Country:",locationDetails[0]["admin1"]+", "+locationDetails[0]["cc"])
+    # Return the location data as a dict so it can be stored in reports etc
     location = {
         "city": locationDetails[0]["name"]+" ("+locationDetails[0]["admin2"]+")",
         "country": locationDetails[0]["admin1"]+", "+locationDetails[0]["cc"]
@@ -89,11 +93,6 @@ def loadJson(filename):
 def displayDict(dic):
     """Print a dict with pretty indentations"""
     print(json.dumps(dic, indent=4))
-
-def getNextTestcase(tcs):
-    """Remove a tc from tcsToRun and return it"""
-    for tc in tcs:
-        return {tc: tcs.pop(tc)}
 
 def testTodayWeather(city, tc):
     """Execute a test on a city's weather based on the parameters in the tc"""
@@ -236,26 +235,24 @@ if __name__ == '__main__':
 
     while running == True:
         """Runtime loop"""
-        # Load the test cases we want available
-        testcases = loadJson("testcases") # Load a dictionary of testcases
-        tcsToRun = testcases # Create a dictionary of testcases, to have tcs removed as they are run
-        nextTestCase = {}
-
         # Splash Intro Screen
         print("Welcome to the weather tester")
+
+        # Testcases: load local json into dict and display it to the user
         print()
         print("Testcases available:")
+        testcases = loadJson("testcases") # Load a dictionary of testcases
         displayDict(testcases)
+
+        # Scope: load local json into dict and display it to the user
         print()
         print("Scope available:")
-        # Load the scope we want available
         scope = loadJson("scope")
         displayDict(scope)
+
         # COMMAND LINE PROMPT
         prompt().cmdloop()
 
-# TODO: Consider whether it is better to track our todo list as a dictionary with full tc details or to just make a list of the keys
-# print("[debug]",testcases.keys())
 # TODO: Cycle through cities based on the local scope.json file
 # TODO: Save function should be flexible for bulk running to create subfolders...city/testcase/datetime ?
 # TODO: Remove coordinate lookup function (its hella slow) and replace it by assigning coordinates to cities in scope.json
