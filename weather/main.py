@@ -41,16 +41,17 @@ def sendRequest(url):
     print("Sending GET request to")
     print(url)
     response = requests.get(url)
-    print("Request failed: Status code",response.status_code)
+    
     # Validate that the request succeeded
     if response.status_code != 200:
         print("Request failed: Status code",response.status_code)
         return False
+
     # Convert the response from JSON to dict
     responseJson = (response).json()
     # Display the request response
     print()
-    print("Request response received:")
+    print("Request response received:",response.status_code)
     displayDict(responseJson)
     return responseJson
 
@@ -62,10 +63,13 @@ def getCityWeather(city, state=""):
     state = ","+state if state != "" else ""
     # Send the request
     cityWeather = sendRequest('https://api.openweathermap.org/data/2.5/weather?q='+city+state+'&appid='+apikey)
-    # Grab the coordinates from the response, so we can verify they are the location we were hoping to get from the city we named
-    location = displayLocation((cityWeather["coord"]["lat"], cityWeather["coord"]["lon"]))
-    cityWeather["location"] = location
-    return cityWeather
+    if cityWeather:
+        # Grab the coordinates from the response, so we can verify they are the location we were hoping to get from the city we named
+        location = displayLocation((cityWeather["coord"]["lat"], cityWeather["coord"]["lon"]))
+        cityWeather["location"] = location
+        return cityWeather
+    else:
+        return False
 
 def displayLocation(coords):
     """Looks up coords and uses an api request to print and return detailed location data"""
