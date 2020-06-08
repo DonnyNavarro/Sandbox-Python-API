@@ -4,6 +4,7 @@ import cmd
 import reverse_geocoder
 import pytemperature
 from datetime import datetime
+from os import path
 
 """String operator support."""
 # This enables us to set inequality parameters in the testcase json and use them cleanly to make comparisons in the code
@@ -80,11 +81,10 @@ def convertTemp(kelvin, scale, rounding=2):
     else:
         return False
 
-def getTestcases(filename="testcases"):
-    """Return testcases as a dict based on a local filename.json"""
-    with open(filename+".json") as testcases:
-        # Return the testcases file as a python dictionary
-        return json.load(testcases)
+def loadJson(filename):
+    """Load a local JSON file and return it as a dict"""
+    with open(filename+".json") as dictionary:
+        return json.load(dictionary)
 
 def displayDict(dic):
     """Print a dict with pretty indentations"""
@@ -94,12 +94,6 @@ def getNextTestcase(tcs):
     """Remove a tc from tcsToRun and return it"""
     for tc in tcs:
         return {tc: tcs.pop(tc)}
-
-def getScope(filename="scope"):
-    """Return scope as an object based on a local JSON file"""
-    with open(filename+".json") as scope:
-        # Return the scope file as a python dictionary
-        return json.load(scope)
 
 def testTodayWeather(city, tc):
     """Execute a test on a city's weather based on the parameters in the tc"""
@@ -122,7 +116,7 @@ def testTodayWeather(city, tc):
         actual = getActual(testValue, testResponse)
 
         # Temperature testing needs to be converted from kelvin
-        actual = convertTemp(actual, testThresholdType) if testThresholdType in ["farenheit", "celsius"]: else actual
+        actual = convertTemp(actual, testThresholdType) if testThresholdType in ["farenheit", "celsius"] else actual
 
         # Test the actual against the tc criteria
         print()
@@ -144,7 +138,7 @@ def testTodayWeather(city, tc):
     saveLog(results, city)
 
 def saveLog(saveStuff, tag=""):
-    """Save saveStuff as a file in the local folder "logs" as a .json file"""
+    """Save saveStuff as a file in the local folder "logs" as a .json file. If used, tag will append a string to the filename and store the log in a folder named the tag string"""
     time = datetime.today().strftime('-%Y-%m-%d-%H%M%S')
     subfolder = tag
     filenameAppend = tag
@@ -155,13 +149,15 @@ def saveLog(saveStuff, tag=""):
     # If we are storing in a subfolder
     if subfolder != "":
         subfolder = subfolder+"/"
-        os.mkdir("logs/"+subfolder)
+        # Make the subfolder if it doesn't exist
+        os.mkdir("logs/"+subfolder) if not os.path.exists("logs/"+subfolder) else False
+    # Save the log file
     with open("logs/"+subfolder+"results"+time+filenameAppend+".json", "w") as outfile:
         json.dump(saveStuff, outfile, indent=4)
 
-def testCompare(comparing, comparison, compareto):
-    # Compare the actuals to the thresholds using the comparison operator
-    if ops[comparison](comparing,compareto):
+def testCompare(actual, comparison, threshold):
+    """Compare the actual to the threshold using the comparison operator. Returns Pass or Fail string"""
+    if ops[comparison](actual,threshold):
         return "Fail"
     else:
         return "Pass"
@@ -182,44 +178,9 @@ class prompt(cmd.Cmd):
     def emptyline(self):
         return False
 
-    def precmd(self, line):
-        return cmd.Cmd.precmd(self, line)
-
-    def postcmd(self, stop, line):
-        return cmd.Cmd.postcmd(self, stop, line)
-
     def do_quit(self, arg):
         """Close the program"""
         quit()
-
-    """The following functions are an attempt to create a queuing system, but needs to be improved"""
-    # def do_reload(self, arg):
-    #     """Reload the testcase queue from scratch"""
-    #     return True
-
-    # def do_load(self, arg):
-    #     """Load a specific testcase to be run next, specified as an argument"""
-    #     global nextTestCase
-    #     nextTestCase = tcsToRun[arg]
-    #     print("Next TC to run:",{arg: nextTestCase})
-
-    # def do_loadnext(self, arg):
-    #     """Load the next testcase so that it is ready to be run"""
-    #     # Grab a tc from tcToRun and queue it up
-    #     global nextTestCase
-    #     nextTestCase = getNextTestcase(tcsToRun)
-
-    # def do_next(self, arg):
-    #     """Display the testcase that is current loaded to be run"""
-    #     print("Next TC to run:",nextTestCase)
-
-    # def do_pending(self, arg):
-    #     """Display the testcases that are still waiting to be run"""
-    #     print("TCs still pending:",tcsToRun)
-
-    # def do_testnext(self, arg):
-    #     """Run the next testcase. You can display what TC this will be with the <next> command"""
-    #     testTodayWeather(nextTestCase)
 
     def do_list(self, arg):
         """Display a list of testcases available"""
@@ -229,14 +190,15 @@ class prompt(cmd.Cmd):
 
     def do_test(self, arg):
         """Run a specfic testcase immediately, specified as an argument"""
-        if not city:
-            print("ERROR: Use the <city> command to specify a city before using this command!")
+        if not arg:
+            print("Testcases Available:")
+            displayDict(testcases)
+        print()
+        print("City to test:",city) if city else print("ERROR: Use the <city> command to specify a city before using this command!")
+        if arg in testcases and city:
+            testTodayWeather(city, {arg: testcases[arg]})     
         else:
-            if arg in testcases:
-                testTodayWeather(city, {arg: testcases[arg]})     
-            else:
-                print("ERROR: Please specify which testcase to test as an argument!")
-                print("  (View a list of available testcases with the <list> command.)")
+            print("ERROR: Please specify which testcase to test as an argument!")
 
     def do_try(self, arg):
         """Send a request for today's weather to a city, specified as an argument"""
@@ -273,13 +235,22 @@ if __name__ == '__main__':
     city = ""
 
     while running == True:
+        """Runtime loop"""
         # Load the test cases we want available
-        testcases = getTestcases("testcases") # Load a dictionary of testcases
+        testcases = loadJson("testcases") # Load a dictionary of testcases
         tcsToRun = testcases # Create a dictionary of testcases, to have tcs removed as they are run
         nextTestCase = {}
+
+        # Splash Intro Screen
+        print("Welcome to the weather tester")
+        print()
+        print("Testcases available:")
         displayDict(testcases)
+        print()
+        print("Scope available:")
         # Load the scope we want available
-        scope = getScope("scope")
+        scope = loadJson("scope")
+        displayDict(scope)
         # COMMAND LINE PROMPT
         prompt().cmdloop()
 
