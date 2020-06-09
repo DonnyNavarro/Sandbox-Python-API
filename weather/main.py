@@ -174,6 +174,53 @@ def confirmPrompt():
     if (confirm).lower() in ["y", "yes"]:
         return True
 
+def chooseCities(options):
+    """Prompt the user to choose cities and return a list of their selections"""
+    cityQueue = []
+    cityChoice = input("\nWhat cities would you like to test? ")
+    cityChoice = cityChoice.title() # make pretty
+    cityChoice = cityChoice.split(",") # each space indicates something to treat as a new list item
+    # allow all as an easy option
+    if cityChoice == ["All"]:
+        cityChoice = options
+    # if only one item is presented, make it a list so type handling is uniform
+    cityChoice = [cityChoice] if type(cityChoice) == str else cityChoice 
+    for key, val in enumerate(cityChoice):
+        cityChoice[key] = val.strip()
+        if cityChoice[key] in options:
+            cityQueue.append(cityChoice[key])
+        else:
+            print("ERROR:",cityChoice[key],"is not among the cities in our scope.")
+    if cityQueue:
+        print("City Queue:",cityQueue)
+        cityQueue = [] if not confirmPrompt() else cityQueue
+        return cityQueue
+    else:
+        return False
+
+def chooseTestcases(options):
+    """Prompt the user to choose testcases and return a list of their selections"""
+    testQueue = []
+    testChoice = input("What testcases would you like to test? ")
+    testChoice = testChoice.split(",") # each space indicates something to treat as a new list item
+    # allow all as an easy option
+    if testChoice == ["all"]:
+        testChoice = [*testcases]
+    # if only one item is presented, make it a list so type handling is uniform
+    testChoice = [testChoice] if type(testChoice) == str else testChoice
+    for key, val in enumerate(testChoice):
+        testChoice[key] = val.strip()
+        if testChoice[key] in testcases:
+            testQueue.append(testChoice[key])
+        else:
+            print("ERROR:",testChoice[key],"is not among the available testcases.")
+    if testQueue:
+        print("Testcase Queue:",testQueue)
+        testQueue = [] if not confirmPrompt() else testQueue
+        return testQueue
+    else:
+        return False
+
 class prompt(cmd.Cmd):
     """Command line input prompt"""
     prompt = "\n (Type <help> to see available commands)\n: "
@@ -213,23 +260,7 @@ class prompt(cmd.Cmd):
             print()
             print("Cities Available:")
             print(scope["cities"])
-            cityChoice = input("\nWhat cities would you like to test? ")
-            cityChoice = cityChoice.title() # make pretty
-            cityChoice = cityChoice.split(",") # each space indicates something to treat as a new list item
-            # allow all as an easy option
-            if cityChoice == ["All"]:
-                cityChoice = scope["cities"]
-            # if only one item is presented, make it a list so 
-            cityChoice = [cityChoice] if type(cityChoice) == str else cityChoice type handling is uniform
-            for key, val in enumerate(cityChoice):
-                cityChoice[key] = val.strip()
-                if cityChoice[key] in scope["cities"]:
-                    cityQueue.append(cityChoice[key])
-                else:
-                    print("ERROR:",cityChoice[key],"is not among the cities in our scope.")
-            if cityQueue:
-                print("City Queue:",cityQueue)
-                cityQueue = [] if not confirmPrompt() else cityQueue
+            cityQueue = chooseCities(scope["cities"])
 
         # SELECT TEST CASES
         testQueue = []
@@ -237,33 +268,7 @@ class prompt(cmd.Cmd):
             print()
             print("Testcases Available:")
             displayDict(testcases)
-            testChoice = input("What testcases would you like to test? ")
-            testChoice = testChoice.split(",") # each space indicates something to treat as a new list item
-            # allow all as an easy option
-            if testChoice == ["all"]:
-                testChoice = [*testcases]
-            # if only one item is presented, make it a list so type handling is uniform
-            testChoice = [testChoice] if type(testChoice) == str else testChoice
-            for key, val in enumerate(testChoice):
-                testChoice[key] = val.strip()
-                if testChoice[key] in testcases:
-                    testQueue.append(testChoice[key])
-                else:
-                    print("ERROR:",testChoice[key],"is not among the available testcases.")
-            if testQueue:
-                print("Testcase Queue:",testQueue)
-                testQueue = [] if not confirmPrompt() else testQueue
-        
-        # One last check before we begin the run
-        confirm = False
-        while not confirm:
-            print("Ready to begin testing!")
-            confirm = confirmPrompt()
-            # Give an option to end this and go back to main menu
-            if not confirm:
-                cancelCheck = input("No? Type cancel or back or something to go back to the main menu ")
-                if cancelCheck in ["cancel", "back", "quit"]:
-                    return True
+            testQueue = chooseTestcases(testcases)
 
         # RUN SELECTED TEST CASES AGAINST SELECTED CITIES
         collectedTcs = {}
