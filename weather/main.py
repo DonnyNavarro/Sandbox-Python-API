@@ -232,24 +232,18 @@ class prompt(cmd.Cmd):
         """Close the program"""
         quit()
 
-    def do_list(self, arg):
+    def do_tc(self, arg):
         """Display a list of testcases available"""
         print("Available Testcases:")
-        for tc in testcases:
-            print(" ",(tc).title())
+        displayDict(testcases)
+    
+    def do_scope(self, arg):
+        """Display the options available in scope.json"""
+        displayDict(scope)
 
     def do_try(self, arg):
         """Send a request for today's weather to a city, specified as an argument. Basically a dry run for pretesting."""
-        global city
-        if not arg:
-            if not city:
-                print("ERROR: Either specify a city as an argument or use the <city> command to prepare one.")
-            else:
-                getCityWeather(city)
-        else:
-            getCityWeather(arg)
-        # Save the city used and keep it active
-        city = (arg).title() if arg else city
+        getCityWeather(arg) if arg else print("Please provide a city to try")
 
     def do_test(self, arg):
         """Run a specfic testcase immediately, specified as an argument. Use the 'all' arg to run the entire testcase.json on the entire scope.json """
@@ -284,24 +278,21 @@ if __name__ == '__main__':
     columnwidth = 15
     city = []
     testQueue = []
+    testcases = loadJson("testcases")
+    scope = loadJson("scope")
+    commands = ["scope", "try", "test", "tc"]
 
     """Runtime loop"""
     # Splash Intro Screen
-    print("Welcome to the weather tester")
+    print("Welcome to the Weather Tester")
     while running == True:
-
-        # Testcases: load local json into dict and display it to the user
         print()
-        print("Testcases available:")
-        testcases = loadJson("testcases") # Load a dictionary of testcases
-        displayDict(testcases)
-
-        # Scope: load local json into dict and display it to the user
-        print()
-        print("Scope available:")
-        scope = loadJson("scope")
-        displayDict(scope)
-
+        print("The following commands are available:")
+        displayDict(commands)
+        # for cmd in commands:
+        #     print(cmd)
+        print("Type help <command> for more info")
+            
         # COMMAND LINE PROMPT
         prompt().cmdloop()
 
