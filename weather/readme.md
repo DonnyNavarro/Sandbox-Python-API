@@ -1,4 +1,4 @@
-This project is intended to create an example of a Python testing approach.
+This project is intended to create an example of a Python approach for API testing.
 
 In this example we will:
 - Define test cases in a local JSON
@@ -13,7 +13,7 @@ In this example we will:
 # Setup
 1. You will need Python 3
 2. You may need to `pip install` modules that are imported
-3. You will need to get an API key from 
+3. You will need to get an API key from https://openweathermap.org/appid
   - Create a `.env` file in the main folder
   - In this file add `APIKEY_OPENWEATHERMAP = "your_api_key_here"`
 4. Run `python3 main.py`
